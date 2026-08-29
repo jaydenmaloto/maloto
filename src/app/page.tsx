@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { caseStudies } from "@/data/caseStudies";
 
 export default function Home() {
@@ -14,9 +17,16 @@ export default function Home() {
               href={`/case-studies/${caseStudy.slug}`}
               className="flex min-h-16 items-center gap-4 py-4 active:bg-foreground/5"
             >
-              <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black">
-                <img src="/placeholders/disc.svg" alt="" className="h-full w-full object-cover" />
-              </span>
+              <motion.span
+                layoutId={`disc-${caseStudy.slug}`}
+                className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black"
+              >
+                <img
+                  src={caseStudy.gallery[0]}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </motion.span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-base font-medium">{caseStudy.title}</span>
                 <span className="block text-sm text-foreground/60">

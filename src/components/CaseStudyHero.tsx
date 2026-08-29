@@ -8,9 +8,10 @@ interface CaseStudyHeroProps {
   role: string;
   year: string;
   images: string[];
+  discLayoutId?: string;
 }
 
-export function CaseStudyHero({ title, role, year, images }: CaseStudyHeroProps) {
+export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseStudyHeroProps) {
   const [index, setIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [showMiniBar, setShowMiniBar] = useState(false);
@@ -48,20 +49,25 @@ export function CaseStudyHero({ title, role, year, images }: CaseStudyHeroProps)
       <div ref={topRef} className="flex flex-col items-center px-4 pt-10">
         <div className="relative w-full max-w-xs sm:max-w-sm">
           <motion.div
-            className="aspect-square overflow-hidden rounded-full bg-black shadow-2xl motion-safe:animate-[spin_22s_linear_infinite]"
-            style={{ touchAction: "pan-y", animationPlayState: dragging ? "paused" : "running" }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.15}
-            onDragStart={() => setDragging(true)}
-            onDragEnd={handleDragEnd}
+            layoutId={discLayoutId}
+            className="aspect-square overflow-hidden rounded-full bg-black shadow-2xl"
           >
-            <img
-              src={images[index]}
-              alt={`${title} artwork ${index + 1} of ${images.length}`}
-              className="pointer-events-none h-full w-full select-none object-cover"
-              draggable={false}
-            />
+            <motion.div
+              className="h-full w-full motion-safe:animate-[spin_22s_linear_infinite]"
+              style={{ touchAction: "pan-y", animationPlayState: dragging ? "paused" : "running" }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragStart={() => setDragging(true)}
+              onDragEnd={handleDragEnd}
+            >
+              <img
+                src={images[index]}
+                alt={`${title} artwork ${index + 1} of ${images.length}`}
+                className="pointer-events-none h-full w-full select-none object-cover"
+                draggable={false}
+              />
+            </motion.div>
           </motion.div>
 
           <button
