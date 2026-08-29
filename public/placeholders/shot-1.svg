@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" role="img" aria-label="Placeholder screenshot 1">
+  <rect width="1200" height="750" fill="#17171a"/>
+  <rect x="80" y="80" width="1040" height="80" rx="12" fill="#232327"/>
+  <rect x="120" y="105" width="220" height="28" rx="6" fill="#3a3a40"/>
+  <rect x="80" y="200" width="500" height="470" rx="16" fill="#232327"/>
+  <rect x="620" y="200" width="500" height="220" rx="16" fill="#232327"/>
+  <rect x="620" y="450" width="500" height="220" rx="16" fill="#232327"/>
+  <rect x="120" y="240" width="420" height="24" rx="6" fill="#e2402b"/>
+  <rect x="120" y="290" width="360" height="16" rx="4" fill="#3a3a40"/>
+  <rect x="120" y="320" width="380" height="16" rx="4" fill="#3a3a40"/>
+  <rect x="120" y="350" width="300" height="16" rx="4" fill="#3a3a40"/>
+  <text x="600" y="720" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#5a5a60">Placeholder screenshot 1</text>
+</svg>
