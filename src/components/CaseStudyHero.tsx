@@ -50,6 +50,7 @@ export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseS
         <div className="relative w-full max-w-xs sm:max-w-sm">
           <motion.div
             layoutId={discLayoutId}
+            transition={{ type: "spring", stiffness: 210, damping: 24, mass: 0.9 }}
             className="aspect-square overflow-hidden rounded-full bg-black shadow-2xl"
           >
             <motion.div
