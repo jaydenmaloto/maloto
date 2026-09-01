@@ -100,21 +100,16 @@ body {
    identical copy of the disc rendered above the sleeve crossfades in as the
    record swings over and out as it returns — the fades land mid-motion, so
    the layer switch is imperceptible at any overlap. */
-/* Fade spans the entire swing (0-8% out, 24-32% back) rather than a quick
-   discrete crossfade at the overlap boundary — tracking the same timeline as
-   record-inspect's transform keyframes so the fade reads as "the disc is
-   turning to face you" rather than a separate, noticeable dissolve. */
 @keyframes record-front-vis {
-  0% {
+  0%,
+  3.5% {
     opacity: 0;
   }
-  8%,
-  24% {
+  6%,
+  25.5% {
     opacity: 1;
   }
-  32% {
-    opacity: 0;
-  }
+  28.5%,
   100% {
     opacity: 0;
   }
