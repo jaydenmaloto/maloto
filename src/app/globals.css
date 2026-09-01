@@ -42,27 +42,71 @@ body {
   }
 }
 
-/* The sleeve breathes with the record, on the same timeline: as the disc
-   pulls further out to the right, the sleeve eases further left. */
-@keyframes sleeve-breathe {
+/* The sleeve wanders on a slow, meandering path — occasional shifts left,
+   a little downward slump, small rotations either way — far less frequent
+   than the record's motion so the two never read as linked. */
+@keyframes sleeve-drift {
   0%,
-  10% {
-    transform: translateX(0);
+  8% {
+    transform: translate(0, 0) rotate(0deg);
   }
-  24%,
-  44% {
-    transform: translateX(-3%);
+  18%,
+  26% {
+    transform: translate(-2.5%, 1.2%) rotate(-1.2deg);
+  }
+  38%,
+  46% {
+    transform: translate(-1%, 0.4%) rotate(0.4deg);
   }
   58%,
-  68% {
-    transform: translateX(-0.8%);
+  66% {
+    transform: translate(-3%, 1.8%) rotate(-0.8deg);
   }
   78%,
-  88% {
-    transform: translateX(-2%);
+  86% {
+    transform: translate(-0.8%, 0.8%) rotate(0.6deg);
   }
   100% {
-    transform: translateX(0);
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+/* Full inspection: on a long hover the record pulls fully clear of the
+   sleeve, swings in front of it (the z flip in record-inspect-z happens
+   while it is clear, so there is no visible pop), holds for a read, then
+   reseats. Runs once every cycle while hover is held. */
+@keyframes record-inspect {
+  0% {
+    transform: none;
+  }
+  6% {
+    transform: translateX(52%);
+  }
+  12%,
+  27% {
+    transform: translateX(-52%) translateY(4%) scale(1.05);
+  }
+  33% {
+    transform: translateX(52%);
+  }
+  39%,
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes record-inspect-z {
+  0%,
+  5% {
+    z-index: 1;
+  }
+  6%,
+  32% {
+    z-index: 15;
+  }
+  34%,
+  100% {
+    z-index: 1;
   }
 }
 
