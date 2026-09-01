@@ -174,3 +174,33 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* The fumble: triggered from JS when the mouse leaves mid-inspection. Falls
+   a fixed viewport-relative distance (clear of any card position) while
+   tumbling, and stays there (fill-mode forwards) until React resets the
+   dropping flag on the next hover. */
+@keyframes record-drop {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  12% {
+    transform: translateY(4%) rotate(-10deg);
+  }
+  100% {
+    transform: translateY(140vh) rotate(300deg);
+  }
+}
+
+/* Card-scoped impact flash, timed to peak as the record would be landing. */
+@keyframes impact-flash {
+  0%,
+  78% {
+    opacity: 0;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
