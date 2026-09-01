@@ -175,32 +175,9 @@ body {
   }
 }
 
-/* The fumble: triggered from JS when the mouse leaves mid-inspection. Falls
-   a fixed viewport-relative distance (clear of any card position) while
-   tumbling, and stays there (fill-mode forwards) until React resets the
-   dropping flag on the next hover. */
-@keyframes record-drop {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-  12% {
-    transform: translateY(4%) rotate(-10deg);
-  }
-  100% {
-    transform: translateY(140vh) rotate(300deg);
-  }
-}
-
-/* Card-scoped impact flash, timed to peak as the record would be landing. */
-@keyframes impact-flash {
-  0%,
-  78% {
-    opacity: 0;
-  }
-  85% {
-    opacity: 0.55;
-  }
-  100% {
-    opacity: 0;
-  }
-}
+/* The "fumbled record" drop and its impact flash are driven by Framer
+   Motion from captured screen coordinates (see FallingRecord in
+   SleeveCard.tsx), not CSS keyframes — the fall needs to start from the
+   record's actual on-screen position at the moment it's caught, and needs
+   to portal above the whole page, neither of which a card-local keyframe
+   animation can do. */

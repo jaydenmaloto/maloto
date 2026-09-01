@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { CaseStudy } from "@/data/caseStudies";
 
@@ -24,6 +25,83 @@ function wasInspecting(elapsedMs: number) {
   return cyclePos >= OVERLAP_WINDOW[0] && cyclePos <= OVERLAP_WINDOW[1];
 }
 
+const DROP_DURATION = 0.95;
+
+/* The fumble: a standalone record, portaled to document.body so it renders
+   above literally everything on the page (not just this card's stacking
+   context) and falls relative to the real viewport. Starts from the exact
+   screen position it was caught at (captured via getBoundingClientRect the
+   instant the mouse leaves), so it visibly continues from wherever the
+   inspection swing happened to be — no snap to some reset position first. */
+function FallingRecord({
+  disc,
+  rect,
+  onLanding,
+  onDone,
+}: {
+  disc: string;
+  rect: DOMRect;
+  onLanding: () => void;
+  onDone: () => void;
+}) {
+  const fallDistance = window.innerHeight - rect.top + rect.height + 80;
+
+  return createPortal(
+    <motion.div
+      initial={{ y: 0, rotate: 0 }}
+      animate={{ y: fallDistance, rotate: 300 }}
+      transition={{ duration: DROP_DURATION, ease: [0.55, 0.06, 0.68, 0.19] }}
+      onUpdate={(latest) => {
+        if (typeof latest.y === "number" && latest.y >= fallDistance * 0.82) onLanding();
+      }}
+      onAnimationComplete={onDone}
+      style={{
+        position: "fixed",
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        zIndex: 9999,
+        pointerEvents: "none",
+      }}
+      className="overflow-hidden rounded-full bg-black"
+    >
+      <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
+      />
+    </motion.div>,
+    document.body,
+  );
+}
+
+/* A subtle, page-wide flash in the background's own tone (not a bright white
+   wash on the sleeve) representing the impact when the fumbled record hits
+   the floor, out of view. */
+function ImpactFlash({ onDone }: { onDone: () => void }) {
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 0.16, 0] }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      onAnimationComplete={onDone}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9998,
+        background: "#5a5a5a",
+        pointerEvents: "none",
+      }}
+    />,
+    document.body,
+  );
+}
+
 /* The full animated disc stack: pull-out transition, inspection swing, idle
    breathe/consider loops, and the circular artwork. Rendered twice per card —
    once behind the sleeve (the primary, carrying the layoutId) and once above
@@ -36,49 +114,33 @@ function wasInspecting(elapsedMs: number) {
    release (0 -> 14%, 160ms, no delay) gets it clear of the sleeve's edge
    fast, then a slower dramatic draw (14% -> 46% total, delayed to start
    right as the release finishes) carries it the rest of the way. Re-park
-   runs the same two transitions in reverse.
-
-   The outermost wrapper additionally carries the "fumbled record" drop,
-   triggered from JS (via the data-dropping attribute on the card's group
-   element) when the mouse leaves mid-inspection instead of the normal
-   retract. */
-function DiscStack({
-  disc,
-  onDropEnd,
-}: {
-  disc: string;
-  onDropEnd?: (e: React.AnimationEvent<HTMLDivElement>) => void;
-}) {
+   runs the same two transitions in reverse. */
+function DiscStack({ disc }: { disc: string }) {
   return (
     <div
-      onAnimationEnd={onDropEnd}
-      className="h-full w-full motion-safe:group-data-[dropping=true]:animate-[record-drop_950ms_ease-in_forwards]"
+      className={`h-full w-full transition-transform duration-[160ms] ${RELEASE_EASE} motion-safe:group-hover:translate-x-[14%]`}
     >
       <div
-        className={`h-full w-full transition-transform duration-[160ms] ${RELEASE_EASE} motion-safe:group-hover:translate-x-[14%]`}
+        className={`h-full w-full transition-[transform,filter] delay-[160ms] duration-[700ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[32%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
       >
-        <div
-          className={`h-full w-full transition-[transform,filter] delay-[160ms] duration-[700ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[32%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
-        >
-          {/* full inspection on long hover: pull clear, swing over the sleeve,
-              hold, reseat */}
-          <div className="h-full w-full motion-safe:group-hover:animate-[record-inspect_14s_ease-in-out_7s_infinite]">
-            {/* idle loop: dramatic further pull-outs with holds */}
-            <div className="h-full w-full motion-safe:group-hover:animate-[record-breathe_7.5s_ease-in-out_0.9s_infinite]">
-              {/* idle loop: twists back and forth — reading the label */}
-              <div className="h-full w-full motion-safe:group-hover:animate-[record-consider_6.5s_ease-in-out_1.2s_infinite]">
-                <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
-                  <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
-                  {/* vinyl sheen */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
-                  />
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
-                  />
-                </div>
+        {/* full inspection on long hover: pull clear, swing over the sleeve,
+            hold, reseat */}
+        <div className="h-full w-full motion-safe:group-hover:animate-[record-inspect_14s_ease-in-out_7s_infinite]">
+          {/* idle loop: dramatic further pull-outs with holds */}
+          <div className="h-full w-full motion-safe:group-hover:animate-[record-breathe_7.5s_ease-in-out_0.9s_infinite]">
+            {/* idle loop: twists back and forth — reading the label */}
+            <div className="h-full w-full motion-safe:group-hover:animate-[record-consider_6.5s_ease-in-out_1.2s_infinite]">
+              <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
+                <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
+                {/* vinyl sheen */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
+                />
               </div>
             </div>
           </div>
@@ -90,8 +152,11 @@ function DiscStack({
 
 export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   const { slug, title, role, year, disc, sleeve } = caseStudy;
-  const [dropping, setDropping] = useState(false);
   const hoverStartRef = useRef<number | null>(null);
+  const frontDiscRef = useRef<HTMLDivElement>(null);
+  const [fallenRect, setFallenRect] = useState<DOMRect | null>(null);
+  const [flashing, setFlashing] = useState(false);
+  const flashFiredRef = useRef(false);
 
   function handleMouseEnter() {
     hoverStartRef.current = Date.now();
@@ -100,15 +165,11 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   function handleMouseLeave() {
     const start = hoverStartRef.current;
     hoverStartRef.current = null;
-    if (start !== null && wasInspecting(Date.now() - start)) {
-      setDropping(true);
-    }
-  }
-
-  function handleDropEnd(e: React.AnimationEvent<HTMLDivElement>) {
-    if (e.animationName === "record-drop") {
-      setDropping(false);
-    }
+    if (start === null || !wasInspecting(Date.now() - start)) return;
+    const el = frontDiscRef.current;
+    if (!el) return;
+    flashFiredRef.current = false;
+    setFallenRect(el.getBoundingClientRect());
   }
 
   return (
@@ -116,7 +177,6 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
       href={`/case-studies/${slug}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      data-dropping={dropping ? "true" : undefined}
       className="group relative z-0 block hover:z-20"
     >
       <div className="relative transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:-translate-y-1">
@@ -152,11 +212,8 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
         </div>
 
         {/* Vinyl disc — between back and front, hidden until pulled out */}
-        <motion.div
-          layoutId={`disc-${slug}`}
-          className="absolute inset-x-[4%] top-[4%] z-[1] aspect-square motion-safe:group-data-[dropping=true]:z-50"
-        >
-          <DiscStack disc={disc} onDropEnd={handleDropEnd} />
+        <motion.div layoutId={`disc-${slug}`} className="absolute inset-x-[4%] top-[4%] z-[1] aspect-square">
+          <DiscStack disc={disc} />
         </motion.div>
 
         {/* Front of the sleeve — tilts and slides left as the record is pulled */}
@@ -201,23 +258,14 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
 
         {/* Front-layer disc clone — identical animation stack, crossfaded in
             while the record swings in front of the jacket during inspection.
-            Forced fully opaque while dropping: its normal visibility is a
-            hover-gated CSS animation that reverts to opacity-0 the instant
-            real hover ends, which would otherwise hide the very copy that's
-            supposed to visibly fall. */}
+            Its position while visible is what the fall is caught from. */}
         <div
+          ref={frontDiscRef}
           aria-hidden
-          className="pointer-events-none absolute inset-x-[4%] top-[4%] z-[15] aspect-square opacity-0 motion-safe:group-hover:animate-[record-front-vis_14s_linear_7s_infinite] motion-safe:group-data-[dropping=true]:z-50 motion-safe:group-data-[dropping=true]:opacity-100!"
+          className="pointer-events-none absolute inset-x-[4%] top-[4%] z-[15] aspect-square opacity-0 motion-safe:group-hover:animate-[record-front-vis_14s_linear_7s_infinite]"
         >
           <DiscStack disc={disc} />
         </div>
-
-        {/* Impact flash — card-scoped, timed to peak as the fumbled record
-            would be hitting the floor */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-2 z-40 rounded-[3px] bg-white opacity-0 motion-safe:group-data-[dropping=true]:animate-[impact-flash_950ms_ease-out]"
-        />
       </div>
 
       <div className="mt-4">
@@ -226,6 +274,20 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
           {role} · {year}
         </span>
       </div>
+
+      {fallenRect && (
+        <FallingRecord
+          disc={disc}
+          rect={fallenRect}
+          onLanding={() => {
+            if (flashFiredRef.current) return;
+            flashFiredRef.current = true;
+            setFlashing(true);
+          }}
+          onDone={() => setFallenRect(null)}
+        />
+      )}
+      {flashing && <ImpactFlash onDone={() => setFlashing(false)} />}
     </Link>
   );
 }
