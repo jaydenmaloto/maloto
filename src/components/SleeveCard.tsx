@@ -10,29 +10,36 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   return (
     <Link href={`/case-studies/${slug}`} className="group relative z-0 block hover:z-20">
       <div className="relative transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:-translate-y-1">
-        {/* Vinyl disc — tucked behind the sleeve, peeks out on hover */}
+        {/* Vinyl disc — tucked behind the sleeve, pulled out to the right on hover */}
         <motion.div
           layoutId={`disc-${slug}`}
-          className="absolute inset-x-[6%] top-[4%] z-0 aspect-square"
+          className="absolute inset-x-[6%] top-[6%] z-0 aspect-square"
         >
-          <div className="h-full w-full transition-[transform,filter] duration-500 [transition-timing-function:cubic-bezier(0.34,1.3,0.5,1)] [filter:drop-shadow(0_4px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:-translate-y-[38%] motion-safe:group-hover:rotate-[24deg] motion-safe:group-hover:[filter:drop-shadow(0_14px_24px_rgba(0,0,0,0.65))]">
-            <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
-              <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
-              {/* vinyl sheen */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
-              />
+          {/* pull-out: slides right with a short "grip" delay and mild overshoot */}
+          <div className="h-full w-full transition-[transform,filter] delay-[60ms] duration-[650ms] [transition-timing-function:cubic-bezier(0.3,1.15,0.45,1)] [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[42%] motion-safe:group-hover:rotate-[14deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]">
+            {/* idle loop: eases out a touch more while hover is held */}
+            <div className="h-full w-full motion-safe:group-hover:animate-[record-breathe_5.5s_ease-in-out_0.9s_infinite]">
+              {/* idle loop: twists back and forth with holds — reading the label */}
+              <div className="h-full w-full motion-safe:group-hover:animate-[record-consider_6.5s_ease-in-out_1.2s_infinite]">
+                <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
+                  <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
+                  {/* vinyl sheen */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
+                  />
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Album sleeve */}
-        <div className="relative z-10 aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-shadow duration-500 group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
+        {/* Album sleeve — tilts and shifts left as the record is pulled */}
+        <div className="relative z-10 aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-[transform,box-shadow] duration-[650ms] [transition-timing-function:cubic-bezier(0.3,1.15,0.45,1)] motion-safe:group-hover:-translate-x-[4%] motion-safe:group-hover:-rotate-[2.5deg] group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
           {sleeve ? (
             <img
               src={sleeve}
@@ -51,10 +58,10 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
               <span className="text-[10px] text-foreground/40">{year}</span>
             </div>
           )}
-          {/* opening-slot shadow along the top edge */}
+          {/* opening-slot shadow along the right edge, where the record exits */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-[7%] bg-gradient-to-b from-black/45 to-transparent"
+            className="pointer-events-none absolute inset-y-0 right-0 w-[7%] bg-gradient-to-l from-black/45 to-transparent"
           />
           {/* paper edge highlight */}
           <div

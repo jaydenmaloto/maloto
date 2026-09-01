@@ -16,3 +16,61 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Idle "DJ considering" loop while a sleeve is hovered: the record eases
+   out a touch more (breathe) and twists back and forth with holds
+   (consider), like someone reading the label deciding whether to play it. */
+@keyframes record-breathe {
+  0%,
+  16% {
+    transform: translateX(0);
+  }
+  32%,
+  50% {
+    transform: translateX(2.5%);
+  }
+  66%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes record-consider {
+  0%,
+  10% {
+    transform: rotate(0deg);
+  }
+  26%,
+  42% {
+    transform: rotate(8deg);
+  }
+  58%,
+  74% {
+    transform: rotate(-6deg);
+  }
+  88%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Turntable spin-up: the placed record gets a fast flick (two revolutions,
+   easing out), then the chained infinite idle spin takes over. Ends at a
+   full revolution so the handoff to record-spin is seamless. */
+@keyframes record-spinup {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(720deg);
+  }
+}
+
+@keyframes record-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

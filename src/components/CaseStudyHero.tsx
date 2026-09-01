@@ -50,11 +50,11 @@ export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseS
         <div className="relative w-full max-w-xs sm:max-w-sm">
           <motion.div
             layoutId={discLayoutId}
-            transition={{ type: "spring", stiffness: 210, damping: 24, mass: 0.9 }}
+            transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
             className="aspect-square overflow-hidden rounded-full bg-black shadow-2xl"
           >
             <motion.div
-              className="h-full w-full motion-safe:animate-[spin_22s_linear_infinite]"
+              className="h-full w-full motion-safe:animate-[record-spinup_1.5s_cubic-bezier(0.2,0.6,0.3,1)_0.35s_1_both,record-spin_22s_linear_1.85s_infinite]"
               style={{ touchAction: "pan-y", animationPlayState: dragging ? "paused" : "running" }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -132,7 +132,7 @@ export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseS
           className="flex w-full items-center gap-3 py-2 text-left active:opacity-70"
           aria-label="Scroll to top of case study"
         >
-          <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black motion-safe:animate-[spin_3s_linear_infinite]">
+          <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-black motion-safe:animate-[record-spin_3s_linear_infinite]">
             <img src={images[0]} alt="" className="h-full w-full object-cover" />
           </span>
           <span className="min-w-0">
