@@ -10,6 +10,8 @@ export interface CaseStudy {
   title: string;
   role: string;
   year: string;
+  disc: string;
+  sleeve?: string;
   gallery: string[];
   sections: CaseStudySection[];
 }
@@ -45,7 +47,9 @@ export const caseStudies: CaseStudy[] = [
     title: "SmartMatch",
     role: "Product Manager",
     year: "2024",
-    gallery: ["/placeholders/usn_record.svg", ...GALLERY.slice(1)],
+    disc: "/placeholders/record_smartmatch.svg",
+    sleeve: "/placeholders/sleeve_smartmatch.svg",
+    gallery: ["/placeholders/record_smartmatch.svg", ...GALLERY.slice(1)],
     sections: sections(),
   },
   {
@@ -53,6 +57,7 @@ export const caseStudies: CaseStudy[] = [
     title: "CollegeAdvisor Operating System",
     role: "Product Manager",
     year: "2023",
+    disc: "/placeholders/disc.svg",
     gallery: GALLERY,
     sections: sections(),
   },
@@ -61,6 +66,7 @@ export const caseStudies: CaseStudy[] = [
     title: "AI Advisor Toolsuite",
     role: "Product Manager",
     year: "2024",
+    disc: "/placeholders/disc.svg",
     gallery: GALLERY,
     sections: sections(),
   },
@@ -69,6 +75,7 @@ export const caseStudies: CaseStudy[] = [
     title: "Anthm.live (iOS)",
     role: "Founder",
     year: "2025",
+    disc: "/placeholders/disc.svg",
     gallery: GALLERY,
     sections: sections(),
   },
