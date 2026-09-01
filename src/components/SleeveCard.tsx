@@ -6,14 +6,48 @@ import type { CaseStudy } from "@/data/caseStudies";
 
 const PULL_EASE = "[transition-timing-function:cubic-bezier(0.45,0.05,0.22,1)]";
 
+/* The full animated disc stack: pull-out transition, inspection swing, idle
+   breathe/consider loops, and the circular artwork. Rendered twice per card —
+   once behind the sleeve (the primary, carrying the layoutId) and once above
+   it (a clone that crossfades in during the inspection) — so the record can
+   pass in front of the jacket without a z-index pop. Identical animation
+   parameters keep both copies pixel-locked. */
+function DiscStack({ disc }: { disc: string }) {
+  return (
+    <div
+      className={`h-full w-full translate-x-[9%] transition-[transform,filter] delay-[60ms] duration-[1000ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[46%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
+    >
+      {/* full inspection on long hover: pull clear, swing over the sleeve,
+          hold, reseat */}
+      <div className="h-full w-full motion-safe:group-hover:animate-[record-inspect_14s_ease-in-out_7s_infinite]">
+        {/* idle loop: dramatic further pull-outs with holds */}
+        <div className="h-full w-full motion-safe:group-hover:animate-[record-breathe_7.5s_ease-in-out_0.9s_infinite]">
+          {/* idle loop: twists back and forth — reading the label */}
+          <div className="h-full w-full motion-safe:group-hover:animate-[record-consider_6.5s_ease-in-out_1.2s_infinite]">
+            <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
+              <img src={disc} alt="" className="h-full w-full object-cover" draggable={false} />
+              {/* vinyl sheen */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   const { slug, title, role, year, disc, sleeve } = caseStudy;
 
   return (
-    <Link
-      href={`/case-studies/${slug}`}
-      className="group relative z-0 block hover:z-20"
-    >
+    <Link href={`/case-studies/${slug}`} className="group relative z-0 block hover:z-20">
       <div className="relative transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-safe:group-hover:-translate-y-1">
         {/* Back of the sleeve — carries the exact same transform stack as the
             front cover so the two panels move as one attached object, with a
@@ -36,10 +70,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
                   <div className="h-full w-full bg-gradient-to-br from-[#161412] to-[#0c0b0a]" />
                 )}
                 {/* cavity shading where the record sits */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-black/35"
-                />
+                <div aria-hidden className="pointer-events-none absolute inset-0 bg-black/35" />
                 <div
                   aria-hidden
                   className="pointer-events-none absolute inset-y-0 right-0 w-[14%] bg-gradient-to-l from-black/60 to-transparent"
@@ -49,59 +80,20 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
           </div>
         </div>
 
-        {/* Vinyl disc — between back and front, pulled out to the right */}
-        <motion.div
-          layoutId={`disc-${slug}`}
-          className="absolute inset-x-[4%] top-[4%] z-[1] aspect-square motion-safe:group-hover:animate-[record-inspect-z_14s_linear_7s_infinite]"
-        >
-          {/* pull-out: starts well after the sleeve and travels slower, so the
-              two motions read as separate actions — tilt the jacket, then
-              draw the record */}
-          <div
-            className={`h-full w-full transition-[transform,filter] delay-[120ms] duration-[1000ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[46%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
-          >
-            {/* full inspection on long hover: pull clear, swing in front of the
-                sleeve (z flips via record-inspect-z on the layoutId element
-                while the disc is clear), hold, reseat */}
-            <div className="h-full w-full motion-safe:group-hover:animate-[record-inspect_14s_ease-in-out_7s_infinite]">
-              {/* idle loop: dramatic further pull-outs with holds */}
-              <div className="h-full w-full motion-safe:group-hover:animate-[record-breathe_7.5s_ease-in-out_0.9s_infinite]">
-                {/* idle loop: twists back and forth — reading the label */}
-                <div className="h-full w-full motion-safe:group-hover:animate-[record-consider_6.5s_ease-in-out_1.2s_infinite]">
-                  <div className="relative h-full w-full overflow-hidden rounded-full bg-black">
-                    <img
-                      src={disc}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      draggable={false}
-                    />
-                    {/* vinyl sheen */}
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.22),rgba(255,255,255,0.05)_38%,transparent_62%)]"
-                    />
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Vinyl disc — between back and front; rests with a thin sliver
+            visible past the sleeve's right edge so the pull-out and re-park
+            read as continuous slides from a visible position */}
+        <motion.div layoutId={`disc-${slug}`} className="absolute inset-x-[4%] top-[4%] z-[1] aspect-square">
+          <DiscStack disc={disc} />
         </motion.div>
 
         {/* Front of the sleeve — tilts and slides left as the record is pulled */}
         <div
           className={`relative z-10 transition-transform duration-[900ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
         >
-          {/* idle loop: eases further left on its own slower rhythm (period
-              deliberately differs from the record's, so they never look
-              linked); timing matches the back panel exactly so front and back
-              stay attached */}
           <div className="motion-safe:group-hover:animate-[sleeve-inspect_14s_ease-in-out_7s_infinite]">
             <div className="motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
-              <div className="relative aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-shadow duration-[750ms] group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
+              <div className="relative aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-shadow duration-[900ms] group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
                 {sleeve ? (
                   <img
                     src={sleeve}
@@ -117,9 +109,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
                     <span className="text-sm font-semibold uppercase tracking-wide text-foreground/85">
                       {title}
                     </span>
-                    <span className="text-[10px] text-foreground/40">
-                      {year}
-                    </span>
+                    <span className="text-[10px] text-foreground/40">{year}</span>
                   </div>
                 )}
                 {/* opening-slot shadow along the right edge, where the record exits */}
@@ -136,12 +126,19 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
             </div>
           </div>
         </div>
+
+        {/* Front-layer disc clone — identical animation stack, crossfaded in
+            while the record swings in front of the jacket during inspection */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-[4%] top-[4%] z-[15] aspect-square opacity-0 motion-safe:group-hover:animate-[record-front-vis_14s_linear_7s_infinite]"
+        >
+          <DiscStack disc={disc} />
+        </div>
       </div>
 
       <div className="mt-4">
-        <span className="block truncate text-sm font-medium sm:text-base">
-          {title}
-        </span>
+        <span className="block truncate text-sm font-medium sm:text-base">{title}</span>
         <span className="block text-xs text-foreground/60 sm:text-sm">
           {role} · {year}
         </span>

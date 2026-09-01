@@ -95,18 +95,23 @@ body {
   }
 }
 
-@keyframes record-inspect-z {
+/* Visibility window for the front-layer disc clone. Instead of flipping
+   z-index (which pops wherever the disc still overlaps the sleeve), an
+   identical copy of the disc rendered above the sleeve crossfades in as the
+   record swings over and out as it returns — the fades land mid-motion, so
+   the layer switch is imperceptible at any overlap. */
+@keyframes record-front-vis {
   0%,
   3.5% {
-    z-index: 1;
+    opacity: 0;
   }
-  4.5%,
-  28% {
-    z-index: 15;
+  6%,
+  25.5% {
+    opacity: 1;
   }
-  30%,
+  28.5%,
   100% {
-    z-index: 1;
+    opacity: 0;
   }
 }
 
