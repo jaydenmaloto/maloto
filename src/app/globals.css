@@ -79,17 +79,17 @@ body {
   0% {
     transform: none;
   }
-  6% {
-    transform: translateX(52%);
+  4% {
+    transform: translateX(34%);
   }
-  12%,
-  27% {
-    transform: translateX(-52%) translateY(4%) scale(1.05);
+  8%,
+  24% {
+    transform: translateX(-28%) translateY(3%) scale(1.04);
   }
-  33% {
-    transform: translateX(52%);
+  28% {
+    transform: translateX(34%);
   }
-  39%,
+  32%,
   100% {
     transform: none;
   }
@@ -97,16 +97,36 @@ body {
 
 @keyframes record-inspect-z {
   0%,
-  5% {
+  3.5% {
     z-index: 1;
   }
-  6%,
-  32% {
+  4.5%,
+  28% {
     z-index: 15;
+  }
+  30%,
+  100% {
+    z-index: 1;
+  }
+}
+
+/* During the inspection the sleeve does the dramatic move instead of the
+   record: it pulls hard away to the left while the record swings over,
+   holds there, and eases back as the record reseats. */
+@keyframes sleeve-inspect {
+  0% {
+    transform: none;
+  }
+  4%,
+  24% {
+    transform: translate(-9%, 1%) rotate(-2deg);
+  }
+  30% {
+    transform: translate(-2%, 0.3%) rotate(-0.5deg);
   }
   34%,
   100% {
-    z-index: 1;
+    transform: none;
   }
 }
 

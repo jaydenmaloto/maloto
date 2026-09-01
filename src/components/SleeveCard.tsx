@@ -22,27 +22,29 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
         <div
           className={`absolute inset-0 z-0 transition-transform duration-[750ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
         >
-          <div className="h-full w-full motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
-            <div className="relative left-[1%] top-[0.8%] h-full w-full overflow-hidden rounded-[3px]">
-              {sleeve ? (
-                <img
-                  src={sleeve}
-                  alt=""
-                  className="h-full w-full object-cover brightness-[0.4] saturate-75"
-                  draggable={false}
+          <div className="h-full w-full motion-safe:group-hover:animate-[sleeve-inspect_14s_ease-in-out_7s_infinite]">
+            <div className="h-full w-full motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
+              <div className="relative left-[1%] top-[0.8%] h-full w-full overflow-hidden rounded-[3px]">
+                {sleeve ? (
+                  <img
+                    src={sleeve}
+                    alt=""
+                    className="h-full w-full object-cover brightness-[0.4] saturate-75"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-[#161412] to-[#0c0b0a]" />
+                )}
+                {/* cavity shading where the record sits */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-black/35"
                 />
-              ) : (
-                <div className="h-full w-full bg-gradient-to-br from-[#161412] to-[#0c0b0a]" />
-              )}
-              {/* cavity shading where the record sits */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-black/35"
-              />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 w-[14%] bg-gradient-to-l from-black/60 to-transparent"
-              />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 w-[14%] bg-gradient-to-l from-black/60 to-transparent"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -50,7 +52,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
         {/* Vinyl disc — between back and front, pulled out to the right */}
         <motion.div
           layoutId={`disc-${slug}`}
-          className="absolute inset-x-[6%] top-[6%] z-[1] aspect-square motion-safe:group-hover:animate-[record-inspect-z_14s_linear_7s_infinite]"
+          className="absolute inset-x-[2.5%] top-[2.5%] z-[1] aspect-square motion-safe:group-hover:animate-[record-inspect-z_14s_linear_7s_infinite]"
         >
           {/* pull-out: starts well after the sleeve and travels slower, so the
               two motions read as separate actions — tilt the jacket, then
@@ -97,36 +99,40 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
               deliberately differs from the record's, so they never look
               linked); timing matches the back panel exactly so front and back
               stay attached */}
-          <div className="motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
-            <div className="relative aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-shadow duration-[750ms] group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
-              {sleeve ? (
-                <img
-                  src={sleeve}
-                  alt={`${title} album sleeve`}
-                  className="h-full w-full object-cover"
-                  draggable={false}
+          <div className="motion-safe:group-hover:animate-[sleeve-inspect_14s_ease-in-out_7s_infinite]">
+            <div className="motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
+              <div className="relative aspect-square overflow-hidden rounded-[3px] ring-1 ring-white/10 shadow-[0_2px_3px_rgba(0,0,0,0.6),0_14px_30px_rgba(0,0,0,0.45)] transition-shadow duration-[750ms] group-hover:shadow-[0_3px_5px_rgba(0,0,0,0.65),0_22px_44px_rgba(0,0,0,0.55)]">
+                {sleeve ? (
+                  <img
+                    src={sleeve}
+                    alt={`${title} album sleeve`}
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#26231f] to-[#141312] px-4 text-center">
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/40">
+                      Maloto Records
+                    </span>
+                    <span className="text-sm font-semibold uppercase tracking-wide text-foreground/85">
+                      {title}
+                    </span>
+                    <span className="text-[10px] text-foreground/40">
+                      {year}
+                    </span>
+                  </div>
+                )}
+                {/* opening-slot shadow along the right edge, where the record exits */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-0 w-[7%] bg-gradient-to-l from-black/45 to-transparent"
                 />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#26231f] to-[#141312] px-4 text-center">
-                  <span className="text-[10px] uppercase tracking-[0.25em] text-foreground/40">
-                    Maloto Records
-                  </span>
-                  <span className="text-sm font-semibold uppercase tracking-wide text-foreground/85">
-                    {title}
-                  </span>
-                  <span className="text-[10px] text-foreground/40">{year}</span>
-                </div>
-              )}
-              {/* opening-slot shadow along the right edge, where the record exits */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 right-0 w-[7%] bg-gradient-to-l from-black/45 to-transparent"
-              />
-              {/* paper edge highlight */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-              />
+                {/* paper edge highlight */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                />
+              </div>
             </div>
           </div>
         </div>
