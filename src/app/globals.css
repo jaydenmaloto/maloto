@@ -52,19 +52,19 @@ body {
   }
   18%,
   26% {
-    transform: translate(-2.5%, 1.2%) rotate(-1.2deg);
+    transform: translate(-2.5%, 0.7%) rotate(-1.2deg);
   }
   38%,
   46% {
-    transform: translate(-1%, 0.4%) rotate(0.4deg);
+    transform: translate(-1%, 0.3%) rotate(0.4deg);
   }
   58%,
   66% {
-    transform: translate(-3%, 1.8%) rotate(-0.8deg);
+    transform: translate(-3%, 1%) rotate(-0.8deg);
   }
   78%,
   86% {
-    transform: translate(-0.8%, 0.8%) rotate(0.6deg);
+    transform: translate(-0.8%, 0.5%) rotate(0.6deg);
   }
   100% {
     transform: translate(0, 0) rotate(0deg);
@@ -84,7 +84,7 @@ body {
   }
   8%,
   24% {
-    transform: translateX(-28%) translateY(3%) scale(1.04);
+    transform: translateX(-28%) scale(1.03);
   }
   28% {
     transform: translateX(34%);
@@ -119,10 +119,10 @@ body {
   }
   4%,
   24% {
-    transform: translate(-9%, 1%) rotate(-2deg);
+    transform: translate(-9%, 0.4%) rotate(-2deg);
   }
   30% {
-    transform: translate(-2%, 0.3%) rotate(-0.5deg);
+    transform: translate(-2%, 0.2%) rotate(-0.5deg);
   }
   34%,
   100% {

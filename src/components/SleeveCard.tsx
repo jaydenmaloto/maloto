@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import type { CaseStudy } from "@/data/caseStudies";
 
-const PULL_EASE = "[transition-timing-function:cubic-bezier(0.32,0.9,0.35,1)]";
+const PULL_EASE = "[transition-timing-function:cubic-bezier(0.45,0.05,0.22,1)]";
 
 export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   const { slug, title, role, year, disc, sleeve } = caseStudy;
@@ -20,7 +20,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
             small constant offset for the jacket's thickness. The record exits
             the slot between them. */}
         <div
-          className={`absolute inset-0 z-0 transition-transform duration-[750ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
+          className={`absolute inset-0 z-0 transition-transform duration-[900ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
         >
           <div className="h-full w-full motion-safe:group-hover:animate-[sleeve-inspect_14s_ease-in-out_7s_infinite]">
             <div className="h-full w-full motion-safe:group-hover:animate-[sleeve-drift_17s_ease-in-out_1.5s_infinite]">
@@ -52,13 +52,13 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
         {/* Vinyl disc — between back and front, pulled out to the right */}
         <motion.div
           layoutId={`disc-${slug}`}
-          className="absolute inset-x-[2.5%] top-[2.5%] z-[1] aspect-square motion-safe:group-hover:animate-[record-inspect-z_14s_linear_7s_infinite]"
+          className="absolute inset-x-[4%] top-[4%] z-[1] aspect-square motion-safe:group-hover:animate-[record-inspect-z_14s_linear_7s_infinite]"
         >
           {/* pull-out: starts well after the sleeve and travels slower, so the
               two motions read as separate actions — tilt the jacket, then
               draw the record */}
           <div
-            className={`h-full w-full transition-[transform,filter] delay-[220ms] duration-[850ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[46%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
+            className={`h-full w-full transition-[transform,filter] delay-[120ms] duration-[1000ms] ${PULL_EASE} [filter:drop-shadow(-4px_5px_10px_rgba(0,0,0,0.55))] motion-safe:group-hover:translate-x-[46%] motion-safe:group-hover:rotate-[12deg] motion-safe:group-hover:[filter:drop-shadow(-10px_14px_24px_rgba(0,0,0,0.65))]`}
           >
             {/* full inspection on long hover: pull clear, swing in front of the
                 sleeve (z flips via record-inspect-z on the layoutId element
@@ -93,7 +93,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
 
         {/* Front of the sleeve — tilts and slides left as the record is pulled */}
         <div
-          className={`relative z-10 transition-transform duration-[750ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
+          className={`relative z-10 transition-transform duration-[900ms] ${PULL_EASE} motion-safe:group-hover:-translate-x-[5%] motion-safe:group-hover:-rotate-[2.5deg]`}
         >
           {/* idle loop: eases further left on its own slower rhythm (period
               deliberately differs from the record's, so they never look
