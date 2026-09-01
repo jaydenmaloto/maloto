@@ -25,7 +25,10 @@ function wasInspecting(elapsedMs: number) {
   return cyclePos >= OVERLAP_WINDOW[0] && cyclePos <= OVERLAP_WINDOW[1];
 }
 
-const DROP_DURATION = 0.95;
+const DROP_DURATION = 0.55;
+/* easeInQuad — real gravity is y ∝ t², so velocity ramps linearly with
+   time rather than the slower, more hesitant curve used before. */
+const GRAVITY_EASE: [number, number, number, number] = [0.11, 0, 0.5, 0];
 
 /* The fumble: a standalone record, portaled to document.body so it renders
    above literally everything on the page (not just this card's stacking
@@ -50,7 +53,7 @@ function FallingRecord({
     <motion.div
       initial={{ y: 0, rotate: 0 }}
       animate={{ y: fallDistance, rotate: 300 }}
-      transition={{ duration: DROP_DURATION, ease: [0.55, 0.06, 0.68, 0.19] }}
+      transition={{ duration: DROP_DURATION, ease: GRAVITY_EASE }}
       onUpdate={(latest) => {
         if (typeof latest.y === "number" && latest.y >= fallDistance * 0.82) onLanding();
       }}
@@ -157,19 +160,40 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   const [fallenRect, setFallenRect] = useState<DOMRect | null>(null);
   const [flashing, setFlashing] = useState(false);
   const flashFiredRef = useRef(false);
+  /* The most recently observed on-screen rect of the front disc, sampled
+     every animation frame while hovering. By the time a mouseleave handler
+     runs, the browser has typically already recalculated styles for the
+     no-longer-hovering state — the inner swing/breathe/consider keyframe
+     animations vanish instantly when :hover stops matching (animations,
+     unlike transitions, don't tween out), so a fresh getBoundingClientRect
+     taken inside the handler tends to capture an already-snapped-back
+     position rather than the true mid-swing one. Polling continuously and
+     using the last sample taken *while still hovering* sidesteps that. */
+  const lastRectRef = useRef<DOMRect | null>(null);
+  const pollRef = useRef<number | null>(null);
+
+  function pollRect() {
+    if (frontDiscRef.current) lastRectRef.current = frontDiscRef.current.getBoundingClientRect();
+    pollRef.current = requestAnimationFrame(pollRect);
+  }
 
   function handleMouseEnter() {
     hoverStartRef.current = Date.now();
+    if (pollRef.current === null) pollRef.current = requestAnimationFrame(pollRect);
   }
 
   function handleMouseLeave() {
+    if (pollRef.current !== null) {
+      cancelAnimationFrame(pollRef.current);
+      pollRef.current = null;
+    }
     const start = hoverStartRef.current;
     hoverStartRef.current = null;
     if (start === null || !wasInspecting(Date.now() - start)) return;
-    const el = frontDiscRef.current;
-    if (!el) return;
+    const rect = lastRectRef.current;
+    if (!rect) return;
     flashFiredRef.current = false;
-    setFallenRect(el.getBoundingClientRect());
+    setFallenRect(rect);
   }
 
   return (
