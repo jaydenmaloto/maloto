@@ -67,9 +67,9 @@ export const caseStudies: CaseStudy[] = [
     title: "AI Advisor Toolsuite",
     role: "Product Manager",
     year: "2024",
-    disc: "/placeholders/record_smartmatch-2.svg",
-    sleeve: "/placeholders/sleeve_smartmatch-2.svg",
-    gallery: ["/placeholders/record_smartmatch-2.svg", ...GALLERY.slice(1)],
+    disc: "/placeholders/record_ai_toolsuite_final.png",
+    sleeve: "/placeholders/sleeve_ai_toolsuite_final.png",
+    gallery: ["/placeholders/record_ai_toolsuite_final.png", ...GALLERY.slice(1)],
     sections: sections(),
   },
   {
