@@ -57,9 +57,9 @@ export const caseStudies: CaseStudy[] = [
     title: "CollegeAdvisor Operating System",
     role: "Product Manager",
     year: "2023",
-    disc: "/placeholders/record_smartmatch-3.svg",
-    sleeve: "/placeholders/sleeve_smartmatch-3.svg",
-    gallery: ["/placeholders/record_smartmatch-3.svg", ...GALLERY.slice(1)],
+    disc: "/placeholders/record_post-purchase_final.png",
+    sleeve: "/placeholders/sleeve_post-purchase_final.png",
+    gallery: ["/placeholders/record_post-purchase_final.png", ...GALLERY.slice(1)],
     sections: sections(),
   },
   {
