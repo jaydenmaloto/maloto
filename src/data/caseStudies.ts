@@ -77,9 +77,9 @@ export const caseStudies: CaseStudy[] = [
     title: "Anthm.live (iOS)",
     role: "Founder",
     year: "2025",
-    disc: "/placeholders/record_smartmatch-1.svg",
-    sleeve: "/placeholders/sleeve_smartmatch-1.svg",
-    gallery: ["/placeholders/record_smartmatch-1.svg", ...GALLERY.slice(1)],
+    disc: "/placeholders/record_anthm_final.png",
+    sleeve: "/placeholders/sleeve_anthm_final.png",
+    gallery: ["/placeholders/record_anthm_final.png", ...GALLERY.slice(1)],
     sections: sections(),
   },
 ];
