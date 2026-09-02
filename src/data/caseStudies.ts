@@ -47,9 +47,9 @@ export const caseStudies: CaseStudy[] = [
     title: "SmartMatch",
     role: "Product Manager",
     year: "2024",
-    disc: "/placeholders/record_smartmatch_new.png",
-    sleeve: "/placeholders/sleeve_smartmatch_new.png",
-    gallery: ["/placeholders/record_smartmatch_new.png", ...GALLERY.slice(1)],
+    disc: "/placeholders/record_smartmatch_final.png",
+    sleeve: "/placeholders/sleeve_smartmatch_final.png",
+    gallery: ["/placeholders/record_smartmatch_final.png", ...GALLERY.slice(1)],
     sections: sections(),
   },
   {
