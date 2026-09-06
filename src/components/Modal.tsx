@@ -23,7 +23,7 @@ export function Modal({ children }: { children: React.ReactNode }) {
       <AnimatePresence onExitComplete={() => router.back()}>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 z-40 overflow-y-auto bg-background"
+            className="fixed inset-y-0 right-0 left-[var(--dock-w)] z-40 overflow-y-auto bg-background"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

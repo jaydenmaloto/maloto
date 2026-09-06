@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, type PanInfo } from "framer-motion";
+import { usePlayerState } from "@/components/player/PlayerProvider";
 
 interface CaseStudyHeroProps {
   title: string;
@@ -12,6 +13,9 @@ interface CaseStudyHeroProps {
 }
 
 export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseStudyHeroProps) {
+  /* Read from context rather than taken as a prop: the intercepted page
+     that renders this is a server component and cannot know the viewport. */
+  const { dockActive } = usePlayerState();
   const [index, setIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [showMiniBar, setShowMiniBar] = useState(false);
@@ -49,7 +53,10 @@ export function CaseStudyHero({ title, role, year, images, discLayoutId }: CaseS
       <div ref={topRef} className="flex flex-col items-center px-4 pt-10">
         <div className="relative w-full max-w-xs sm:max-w-sm">
           <motion.div
-            layoutId={discLayoutId}
+            /* On desktop the dock's platter is the record, so it takes over as
+               the flight destination and this yields the shared id. Below lg
+               there is no dock and this stays the destination, unchanged. */
+            layoutId={dockActive ? undefined : discLayoutId}
             transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
             className="aspect-square overflow-hidden rounded-full bg-black shadow-2xl"
           >

@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import type { CaseStudy } from "@/data/caseStudies";
+import { usePlayerActions } from "@/components/player/PlayerProvider";
 
 /* Well-formed (monotonic) ease-out curves — the earlier custom bezier had a
    second control point with a lower x than the first, which is an invalid
@@ -155,6 +156,10 @@ function DiscStack({ disc }: { disc: string }) {
 
 export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   const { slug, title, role, year, disc, sleeve } = caseStudy;
+  /* usePlayerActions has a stable identity for the life of the provider,
+     so subscribing here cannot re-render this card when the docked record
+     changes — which is what keeps the hover choreography below undisturbed. */
+  const { play } = usePlayerActions();
   const hoverStartRef = useRef<number | null>(null);
   const frontDiscRef = useRef<HTMLDivElement>(null);
   const [fallenRect, setFallenRect] = useState<DOMRect | null>(null);
@@ -199,6 +204,7 @@ export function SleeveCard({ caseStudy }: { caseStudy: CaseStudy }) {
   return (
     <Link
       href={`/case-studies/${slug}`}
+      onClick={() => play(slug)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="group relative z-0 block hover:z-20"

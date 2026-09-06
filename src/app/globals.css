@@ -3,7 +3,45 @@
 :root {
   --background: #0b0b0c;
   --foreground: #f2f2f3;
+
+  /* Width of the docked turntable column. Deliberately 0 below lg, where the
+     dock collapses to the bottom bar — so pl-[var(--dock-w)] on <main> and
+     left-[var(--dock-w)] on the modal overlay need no breakpoint variants and
+     silently become no-ops on mobile.
+
+     18rem at lg is not arbitrary: at exactly 1024px a 22rem dock would leave
+     672px, which is max-w-2xl with nothing left for the px-5 gutters, and the
+     content column would overflow. 288px leaves 736px — 672 + 40 fits.
+
+     The 64rem breakpoint below is duplicated in two other places that must
+     move in lockstep: the matchMedia() string in PlayerProvider.tsx (which
+     drives dockActive) and the `hidden lg:flex` on the dock shell in
+     VinylDock.tsx. Change one, change all three. */
+  --dock-w: 0px;
 }
+
+@media (min-width: 64rem) {
+  /* lg — see the lockstep note above */
+  :root {
+    --dock-w: 18rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  /* xl */
+  :root {
+    --dock-w: 22rem;
+  }
+}
+
+/* --dock-w stays out of @theme inline on purpose: it is a layout constant,
+   not a design token, and registering it there would have Tailwind generate a
+   whole family of spacing/width utilities for it. Arbitrary-value syntax
+   (w-[var(--dock-w)]) reads it perfectly well without that.
+
+   The skeuomorphic pass adds its material tokens here — --plinth, --felt,
+   --brushed-steel — alongside the tonearm-cue / platter-wow keyframes at the
+   bottom of this file. */
 
 @theme inline {
   --color-background: var(--background);
@@ -16,6 +54,20 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Stacking order across the whole site, in one place because it is otherwise
+   spread over five files:
+
+     0-20        SleeveCard internals; the card lifts to hover:z-20
+     30          VinylDock — intro shell, docked column, and mobile bar
+     40          Modal overlay, inset to the right of the dock so the two
+                 never overlap (see Modal.tsx)
+     50          CaseStudyHero's mini-bar, local to the modal's own
+                 stacking context
+     9998/9999   ImpactFlash / FallingRecord, portaled to document.body
+
+   The fumble deliberately outranks the dock: a record dropped mid-inspection
+   should fall in *front* of the turntable, not behind it. */
 
 /* Idle "DJ considering" loop while a sleeve is hovered: the record eases
    out a touch more (breathe) and twists back and forth with holds

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { MotionProvider } from "@/components/MotionProvider";
+import { VinylDock } from "@/components/player/VinylDock";
+import { DockMobileBar } from "@/components/player/DockMobileBar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,8 +28,15 @@ export default function RootLayout({ children, modal }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-sans">
         <MotionProvider>
-          {children}
+          {/* The content column. pl-[var(--dock-w)] is a no-op below lg,
+              where the token is 0px, so no breakpoint variant is needed. */}
+          <main className="flex min-h-full flex-1 flex-col pl-[var(--dock-w)]">{children}</main>
+          {/* Sibling of <main>, not a child: the modal is fixed and sets its
+              own left inset, so nesting it inside a padded flex child would
+              add nothing and risk a stray stacking context. */}
           {modal}
+          <VinylDock />
+          <DockMobileBar />
         </MotionProvider>
       </body>
     </html>

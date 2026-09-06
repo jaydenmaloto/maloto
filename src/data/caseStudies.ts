@@ -26,6 +26,10 @@ export interface CaseStudy {
   year: string;
   disc: string;
   sleeve?: string;
+  /* Audio source for the record. Nothing reads this yet — the player is
+     silent by design, and the dock's mute control is inert until a later
+     pass wires up real playback. */
+  track?: string;
   gallery: string[];
   metrics: CaseStudyMetric[];
   sections: CaseStudySection[];
