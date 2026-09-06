@@ -53,19 +53,14 @@ export function Shell() {
         )}
       </header>
 
-      {/* Two different shapes, not one grid with an empty cell: browsing wants
-          the timeline at a comfortable reading width, reading wants it demoted
-          to a narrow rail with the study taking the room. */}
-      {selected ? (
-        <div className="mt-14 grid gap-10 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-14">
-          <Timeline selectedSlug={selectedSlug} />
-          <CaseStudyContent caseStudy={selected} />
-        </div>
-      ) : (
-        <div className="mx-auto mt-14 max-w-2xl">
-          <Timeline selectedSlug={null} />
-        </div>
-      )}
+      {/* The timeline is the browsing surface and nothing else: once you are
+          reading a study it goes away entirely rather than lingering as a
+          sidebar, so the study gets the full column and "‹ All work" is the
+          single way back. Same width in both states, so the deck above stays
+          over the same measure and nothing shifts on navigation. */}
+      <div className="mx-auto mt-14 max-w-2xl">
+        {selected ? <CaseStudyContent caseStudy={selected} /> : <Timeline />}
+      </div>
     </div>
   );
 }

@@ -129,93 +129,81 @@ function LeadIn() {
   );
 }
 
-export function Timeline({ selectedSlug }: { selectedSlug: string | null }) {
+/* Rendered only on the browsing view. The case study page drops the timeline
+   entirely rather than keeping it as a sidebar, so there is no compact or
+   selected variant to carry here. */
+export function Timeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   useScrollLitRail(containerRef);
   const entries = buildTimeline();
-  const compact = selectedSlug !== null;
 
   return (
     <div>
       <LeadIn />
+
       <div ref={containerRef} className="relative">
-      {/* the track and the fill that runs down it */}
-      <div
-        aria-hidden
-        className="absolute top-0 bottom-0 w-px"
-        style={{ left: GUTTER / 2, background: "var(--rail)" }}
-      />
-      <div
-        aria-hidden
-        className="absolute top-0 w-px"
-        style={{
-          left: GUTTER / 2,
-          height: "var(--timeline-fill, 0px)",
-          background: "var(--rail-lit)",
-        }}
-      />
+        {/* the track, and the fill that runs down it */}
+        <div
+          aria-hidden
+          className="absolute top-0 bottom-0 w-px"
+          style={{ left: GUTTER / 2, background: "var(--rail)" }}
+        />
+        <div
+          aria-hidden
+          className="absolute top-0 w-px"
+          style={{
+            left: GUTTER / 2,
+            height: "var(--timeline-fill, 0px)",
+            background: "var(--rail-lit)",
+          }}
+        />
 
-      <div className={compact ? "flex flex-col gap-5" : "flex flex-col gap-10"}>
-        {entries.map((entry) => {
-          if (entry.kind === "company") {
-            const { company } = entry;
-            return (
-              <Row key={entryKey(entry)} dot={<Dot big accent={company.accent} />}>
-                <h2 className="text-lg font-semibold tracking-tight" style={{ color: company.accent }}>
-                  {company.name}
-                </h2>
-                <p className="text-lg tracking-tight">{company.role}</p>
-                {!compact && (
-                  <>
-                    <p className="mt-0.5 text-xs text-muted">{company.period}</p>
-                    <p className="mt-3 max-w-prose text-sm leading-6 text-muted">{company.blurb}</p>
-                  </>
-                )}
-              </Row>
-            );
-          }
-
-          const { study } = entry;
-          const isSelected = study.slug === selectedSlug;
-          return (
-            <Row key={entryKey(entry)} dot={<Dot />}>
-              <Link
-                href={`/case-studies/${study.slug}`}
-                aria-current={isSelected ? "page" : undefined}
-                className={`group flex gap-4 rounded-lg outline-offset-4 transition-opacity ${
-                  isSelected ? "" : "hover:opacity-70"
-                }`}
-              >
-                {study.sleeve && (
-                  /* next/image earns its keep here: the sleeve PNGs are
-                     500-660KB apiece and this renders them at 64px. */
-                  <Image
-                    src={study.sleeve}
-                    alt=""
-                    width={64}
-                    height={64}
-                    className={`shrink-0 rounded-sm border border-hairline object-cover ${
-                      compact ? "h-[34px] w-[34px]" : "h-16 w-16"
-                    }`}
-                  />
-                )}
-                <span className="min-w-0">
-                  <span
-                    className={`block text-sm font-semibold ${
-                      isSelected ? "underline decoration-2 underline-offset-4" : ""
-                    }`}
+        <div className="flex flex-col gap-10">
+          {entries.map((entry) => {
+            if (entry.kind === "company") {
+              const { company } = entry;
+              return (
+                <Row key={entryKey(entry)} dot={<Dot big accent={company.accent} />}>
+                  <h2
+                    className="text-lg font-semibold tracking-tight"
+                    style={{ color: company.accent }}
                   >
-                    {study.title}
-                  </span>
-                  {!compact && (
+                    {company.name}
+                  </h2>
+                  <p className="text-lg tracking-tight">{company.role}</p>
+                  <p className="mt-0.5 text-xs text-muted">{company.period}</p>
+                  <p className="mt-3 max-w-prose text-sm leading-6 text-muted">{company.blurb}</p>
+                </Row>
+              );
+            }
+
+            const { study } = entry;
+            return (
+              <Row key={entryKey(entry)} dot={<Dot />}>
+                <Link
+                  href={`/case-studies/${study.slug}`}
+                  className="group flex gap-4 rounded-lg outline-offset-4 transition-opacity hover:opacity-70"
+                >
+                  {study.sleeve && (
+                    /* next/image earns its keep here: the sleeve PNGs are
+                       500-660KB apiece and this renders them at 64px. */
+                    <Image
+                      src={study.sleeve}
+                      alt=""
+                      width={64}
+                      height={64}
+                      className="h-16 w-16 shrink-0 rounded-sm border border-hairline object-cover"
+                    />
+                  )}
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{study.title}</span>
                     <span className="mt-1 line-clamp-2 block text-sm leading-6 text-muted">
                       {study.subtitle}
                     </span>
-                  )}
-                </span>
-              </Link>
-            </Row>
-          );
+                  </span>
+                </Link>
+              </Row>
+            );
           })}
         </div>
       </div>
