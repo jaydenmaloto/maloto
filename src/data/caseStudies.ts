@@ -26,17 +26,9 @@ export interface CaseStudy {
   year: string;
   disc: string;
   sleeve?: string;
-  gallery: string[];
   metrics: CaseStudyMetric[];
   sections: CaseStudySection[];
 }
-
-const GALLERY = [
-  "/placeholders/disc.svg",
-  "/placeholders/shot-1.svg",
-  "/placeholders/shot-2.svg",
-  "/placeholders/shot-3.svg",
-];
 
 export const caseStudies: CaseStudy[] = [
   {
@@ -49,7 +41,6 @@ export const caseStudies: CaseStudy[] = [
     year: "2023 – 2025",
     disc: "/placeholders/record_smartmatch_final.png",
     sleeve: "/placeholders/sleeve_smartmatch_final.png",
-    gallery: ["/placeholders/record_smartmatch_final.png", ...GALLERY.slice(1)],
     metrics: [
       { label: "Annual cancellation rate", value: "11% → 3%" },
       { label: "Increase in close percentage", value: "+25%" },
@@ -131,7 +122,6 @@ export const caseStudies: CaseStudy[] = [
     year: "2021 – Present",
     disc: "/placeholders/record_post-purchase_final.png",
     sleeve: "/placeholders/sleeve_post-purchase_final.png",
-    gallery: ["/placeholders/record_post-purchase_final.png", ...GALLERY.slice(1)],
     metrics: [
       { label: "Student profiles structured", value: "10,000+" },
       { label: "Application outcomes captured", value: "40,000+" },
@@ -214,7 +204,6 @@ export const caseStudies: CaseStudy[] = [
     year: "2024 – 2025",
     disc: "/placeholders/record_ai_toolsuite_final.png",
     sleeve: "/placeholders/sleeve_ai_toolsuite_final.png",
-    gallery: ["/placeholders/record_ai_toolsuite_final.png", ...GALLERY.slice(1)],
     metrics: [
       { label: "Time saved per essay", value: "5–10 min" },
       { label: "Offline research time", value: "↓ 14.8%" },
@@ -297,7 +286,6 @@ export const caseStudies: CaseStudy[] = [
     year: "2025 – Present",
     disc: "/placeholders/record_anthm_final.png",
     sleeve: "/placeholders/sleeve_anthm_final.png",
-    gallery: ["/placeholders/record_anthm_final.png", ...GALLERY.slice(1)],
     metrics: [
       { label: "MVP shipped", value: "December" },
       { label: "iOS launch", value: "App Store" },
@@ -358,6 +346,58 @@ export const caseStudies: CaseStudy[] = [
     ],
   },
 ];
+
+export interface Company {
+  /* Matches CaseStudy.company, which is what buildTimeline() groups on. */
+  id: string;
+  name: string;
+  role: string;
+  period: string;
+  blurb: string;
+  /* Drives the company's name colour and its lit timeline dot. */
+  accent: string;
+}
+
+/* PLACEHOLDER COPY. The blurbs below are Jayden's general positioning line
+   standing in for real per-company writing — they say nothing specific about
+   either company yet and need replacing before this is shown to anyone. */
+const POSITIONING =
+  "I work from the inside out: finding the behavior that matters, building the logic and infrastructure behind it, and turning that into experiences users trust and businesses can quickly build upon.";
+
+export const companies: Company[] = [
+  {
+    id: "CollegeAdvisor.com",
+    name: "CollegeAdvisor.com",
+    role: "Director of Product",
+    period: "2021 – 2025",
+    blurb: POSITIONING,
+    accent: "#2f855a",
+  },
+  {
+    id: "Anthm",
+    name: "Anthm.live (iOS)",
+    role: "Founder and Product Lead",
+    period: "2025 – Present",
+    blurb: POSITIONING,
+    accent: "#16161a",
+  },
+];
+
+export type TimelineEntry =
+  | { kind: "company"; company: Company }
+  | { kind: "study"; study: CaseStudy };
+
+/* The timeline's spine: each company followed by its own case studies. Order
+   comes from the companies array and then from caseStudies, so sequencing
+   stays controlled by the data rather than by anything in the view. */
+export function buildTimeline(): TimelineEntry[] {
+  return companies.flatMap((company) => [
+    { kind: "company" as const, company },
+    ...caseStudies
+      .filter((study) => study.company === company.id)
+      .map((study) => ({ kind: "study" as const, study })),
+  ]);
+}
 
 export function getCaseStudy(slug: string) {
   return caseStudies.find((c) => c.slug === slug);
