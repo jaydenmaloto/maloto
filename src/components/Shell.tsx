@@ -46,7 +46,7 @@ export function Shell() {
             than pixels so it scales with the drawing on narrow screens. */}
         <Turntable
           disc={selected?.disc ?? null}
-          className="w-full max-w-[420px] translate-x-[2.5%]"
+          className="w-full max-w-[360px] translate-x-[2.5%]"
         />
 
         {selected ? (
@@ -61,7 +61,10 @@ export function Shell() {
             <h1 className="mt-10 text-2xl font-semibold tracking-tight">
               Design-blooded Product Leader
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-muted">{INTRO}</p>
+            {/* max-w-md, not xl: the rail runs up the left margin beside this
+                paragraph, and the gap between them is (2xl - this) / 2. At xl
+                that left only 34px and the lead-in's + landed on the text. */}
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted">{INTRO}</p>
           </>
         )}
       </header>
@@ -71,7 +74,12 @@ export function Shell() {
           sidebar, so the study gets the full column and "‹ All work" is the
           single way back. Same width in both states, so the deck above stays
           over the same measure and nothing shifts on navigation. */}
-      <div className="mx-auto mt-14 max-w-2xl">
+      {/* Browsing pulls the rail up so the fader's + sits alongside the intro
+          paragraph instead of starting in clear space below it. Only from md
+          up — at 1440 the rail clears the intro text by ~36px, but on a narrow
+          viewport both span the full column and would collide. A case study
+          gets the normal offset: there is no rail to align to. */}
+      <div className={`mx-auto max-w-2xl ${selected ? "mt-14" : "mt-14 md:-mt-20"}`}>
         {selected ? <CaseStudyContent caseStudy={selected} /> : <Timeline />}
       </div>
     </div>

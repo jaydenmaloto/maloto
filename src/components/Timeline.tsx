@@ -5,26 +5,28 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { buildTimeline, type TimelineEntry } from "@/data/caseStudies";
 
-/* Where down the viewport the "playhead" sits. The fill reaches a dot at the
-   moment that dot crosses this line. */
-const PLAYHEAD = 0.45;
-/* Gutter width, and therefore the centre line the rail is drawn on. */
-const GUTTER = 24;
+/* Gutter width, and therefore the centre line the channel is milled on. */
+const GUTTER = 28;
+const CENTRE = GUTTER / 2;
+/* Channel width. Notches cross it symmetrically, so they stay inside the
+   gutter — hanging them off to one side, as the CDJ does, would overflow. */
+const SLOT_W = 5;
 
 function entryKey(entry: TimelineEntry) {
   return entry.kind === "company" ? `company:${entry.company.id}` : `study:${entry.study.slug}`;
 }
 
-/* One scroll listener drives both the fill height and which dots are lit, so
-   a dot can never light early or late relative to the line — they are the
-   same measurement. Neither writes React state: the fill goes out as a custom
-   property and the dots as a data attribute, so scrolling never re-renders. */
+/* One scroll listener drives the cap's position and which notches are lit, so
+   a notch can never light early or late relative to the cap — they are the
+   same measurement. Neither writes React state: the position goes out as a
+   custom property and the notches as data attributes, so scrolling never
+   re-renders. */
 function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    let dots: { el: HTMLElement; offset: number }[] = [];
+    let ticks: { el: HTMLElement; offset: number }[] = [];
     let frame = 0;
 
     function measure() {
@@ -32,13 +34,13 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
       if (!el) return;
       /* Measured off bounding rects rather than offsetTop. offsetTop is
          relative to each element's own offsetParent, and the container is
-         positioned, so mixing the two frames put every dot at a negative
+         positioned, so mixing the two frames put every notch at a negative
          offset and lit the whole rail on load. Both rects are read in the same
          frame, so the delta between them is scroll-independent. */
       const base = el.getBoundingClientRect().top;
-      dots = [...el.querySelectorAll<HTMLElement>("[data-dot]")].map((dot) => {
-        const rect = dot.getBoundingClientRect();
-        return { el: dot, offset: rect.top - base + rect.height / 2 };
+      ticks = [...el.querySelectorAll<HTMLElement>("[data-tick]")].map((tick) => {
+        const rect = tick.getBoundingClientRect();
+        return { el: tick, offset: rect.top - base + rect.height / 2 };
       });
       paint();
     }
@@ -47,13 +49,43 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
       const el = containerRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const playhead = window.innerHeight * PLAYHEAD;
-      const fill = Math.max(0, Math.min(playhead - rect.top, rect.height));
+
+      /* The cap's travel is mapped to how far the document has scrolled, not
+         to a fixed line down the viewport.
+
+         A viewport playhead is the obvious approach and it was the first one
+         here, but it silently breaks on a short page: with four studies the
+         document only scrolls ~480px, the foot of the rail never reaches the
+         line, and half the notches could never light at all. Mapping to scroll
+         progress guarantees the cap traverses the whole channel and every
+         notch gets passed, however little content there is.
+
+         When the rail is most of the page — which it is here — the two
+         behave almost identically anyway: the cap's drift down the track
+         cancels the track's own scrolling, so it still reads as a playhead
+         holding position while the notches move past it.
+
+         A page that doesn't scroll at all has been seen in full, so
+         everything counts as reached. */
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 1;
+      const fill = Math.max(0, Math.min(progress * rect.height, rect.height));
       el.style.setProperty("--timeline-fill", `${fill}px`);
-      for (const dot of dots) {
+
+      for (const tick of ticks) {
+        const lit = tick.offset <= fill;
+        const wasLit = tick.el.hasAttribute("data-lit");
         /* toggle() with an explicit second argument is idempotent, so this is
            a no-op write on the frames where nothing changed. */
-        dot.el.toggleAttribute("data-lit", dot.offset <= fill);
+        tick.el.toggleAttribute("data-lit", lit);
+        if (lit === wasLit) continue;
+        /* A genuine crossing. Restart the pulse by removing the attribute,
+           forcing a reflow so the browser drops the old animation, then
+           re-adding. The forced reflow only happens on the handful of frames
+           where the cap actually passes a notch. */
+        tick.el.removeAttribute("data-pulse");
+        void tick.el.offsetWidth;
+        tick.el.setAttribute("data-pulse", "");
       }
     }
 
@@ -69,7 +101,7 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", measure);
     /* Content height changes as fonts load and images decode, which moves
-       every dot underneath them. */
+       every notch underneath them. */
     const observer = new ResizeObserver(measure);
     observer.observe(container);
 
@@ -82,48 +114,90 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
   }, [containerRef]);
 }
 
-function Dot({ big, accent }: { big?: boolean; accent?: string }) {
-  const size = big ? 13 : 7;
+/* A milestone notch, crossing the channel symmetrically. Companies get a wider,
+   heavier mark than studies, which is what carries the hierarchy the old dots
+   carried through size. */
+function Tick({ major, accent }: { major?: boolean; accent?: string }) {
   return (
     <span
-      data-dot
+      data-tick
       aria-hidden
-      /* Background is deliberately NOT set inline: an inline style would beat
-         the [data-lit] rule in globals.css and the dot could never light. Only
-         --lit (the colour it lights *to*) is passed in — companies use their
-         own accent, studies fall back to the rail indigo. */
-      className="mt-1.5 block shrink-0 rounded-full transition-colors duration-300"
-      style={{ width: size, height: size, ["--lit" as string]: accent ?? "var(--rail-lit)" }}
+      /* relative so it paints above the channel. The channel is absolutely
+         positioned and the notches are in normal flow, so without this the
+         channel wins the paint order and each notch reads as two disconnected
+         dashes either side of the slot rather than one stamped detent. */
+      className="relative mt-2 block shrink-0 rounded-[1px] transition-colors duration-300"
+      style={{
+        width: major ? 21 : 13,
+        height: major ? 3 : 2,
+        ["--lit" as string]: accent ?? "var(--rail-lit)",
+      }}
     />
   );
 }
 
-/* A row: fixed gutter holding the dot, then the content. Keeping the dot in
-   the row's own flow is what makes it line up with the heading beside it. */
-function Row({ children, dot }: { children: React.ReactNode; dot: React.ReactNode }) {
+/* A row: fixed gutter holding the notch, then the content. Keeping the notch
+   in the row's own flow is what makes it line up with the heading beside it. */
+function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactNode }) {
   return (
     <div className="flex gap-5">
       <div className="flex shrink-0 justify-center" style={{ width: GUTTER }}>
-        {dot}
+        {tick}
       </div>
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }
 
-/* The play glyph and the curve sweeping down into the head of the rail. Drawn
-   permanently lit: it reads as the start of the played path, and it sits above
-   the measured region so it never participates in the fill. The curve lands at
-   x = GUTTER / 2, which is exactly where the track is drawn. */
+/* The + at the head of the fader and the curve sweeping down into the channel.
+
+   Stroked in --rail, not --rail-lit: this is track the cap has not reached
+   yet, so it has to match the unlit channel it flows into. Stroking it in the
+   lit colour is what previously made it read as disconnected — a coloured
+   curve dead-ending into a grey line.
+
+   The curve's final control point shares the endpoint's x, so its tangent is
+   vertical where it meets the channel and there is no kink at the join. */
 function LeadIn() {
+  /* 76 is as far right as the + can sit: the intro paragraph beside it starts
+     36px further along, and the gap is fixed by the two max-widths. */
+  const W = 110;
+  const H = 140;
+  const PLUS_X = 76;
+  const CURVE = `M ${PLUS_X} 26 C ${PLUS_X} 92, ${CENTRE} 74, ${CENTRE} ${H}`;
   return (
-    <svg width={80} height={62} viewBox="0 0 80 62" aria-hidden className="block overflow-visible">
-      <path d="M 44 6 L 56 13 L 44 20 Z" fill="var(--rail-lit)" />
+    <svg
+      width={W}
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      aria-hidden
+      /* Once the timeline is pulled up alongside the intro, this element's box
+         overlaps the paragraph. It is decorative, so let clicks and text
+         selection pass straight through it. */
+      className="pointer-events-none block overflow-visible"
+    >
+      {/* + glyph, the fader's upper end */}
+      <g stroke="var(--rail-lit)" strokeWidth={1.5} strokeLinecap="round">
+        <line x1={PLUS_X - 6} y1={10} x2={PLUS_X + 6} y2={10} />
+        <line x1={PLUS_X} y1={4} x2={PLUS_X} y2={16} />
+      </g>
+      {/* A long, deep sweep rather than the previous shallow bend, stroked
+          twice to reproduce the channel's section: a darker lip under a
+          --slot bed. Stroking it once in a flat grey left a visible tonal
+          step where the curve met the channel's inset shading. */}
       <path
-        d={`M 50 24 C 50 46, ${GUTTER / 2} 38, ${GUTTER / 2} 62`}
+        d={CURVE}
         fill="none"
-        stroke="var(--rail-lit)"
-        strokeWidth={1}
+        stroke="rgba(30,32,40,0.13)"
+        strokeWidth={SLOT_W + 1.5}
+        strokeLinecap="round"
+      />
+      <path
+        d={CURVE}
+        fill="none"
+        stroke="var(--slot)"
+        strokeWidth={SLOT_W}
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -142,19 +216,40 @@ export function Timeline() {
       <LeadIn />
 
       <div ref={containerRef} className="relative">
-        {/* the track, and the fill that runs down it */}
+        {/* The channel: milled into the page rather than drawn on it, with the
+            CDJ's dense measurement scale coming free from a repeating gradient
+            instead of generated elements — no DOM cost, and it scales to
+            whatever height the rail ends up. */}
         <div
           aria-hidden
-          className="absolute top-0 bottom-0 w-px"
-          style={{ left: GUTTER / 2, background: "var(--rail)" }}
-        />
-        <div
-          aria-hidden
-          className="absolute top-0 w-px"
+          className="absolute top-0 bottom-0 rounded-full"
           style={{
-            left: GUTTER / 2,
+            left: CENTRE - SLOT_W / 2,
+            width: SLOT_W,
+            /* Graduations kept faint on purpose. At full strength they read
+               as a dashed line and swallowed the milestone notches sitting on
+               top of them; the slot has to stay a surface, not a pattern. */
+            background: `repeating-linear-gradient(
+              to bottom,
+              rgba(120,126,140,0.16) 0px, rgba(120,126,140,0.16) 1px,
+              var(--slot) 1px, var(--slot) 7px
+            )`,
+            boxShadow: "inset 0 1px 2px rgba(30,32,40,0.18), 0 1px 0 rgba(255,255,255,0.8)",
+          }}
+        />
+
+        {/* Traversed distance. Real faders don't fill, but the cue is worth the
+            small departure — it is what makes the cap read as having come from
+            somewhere. */}
+        <div
+          aria-hidden
+          className="absolute top-0 rounded-full"
+          style={{
+            left: CENTRE - 0.5,
+            width: 1,
             height: "var(--timeline-fill, 0px)",
             background: "var(--rail-lit)",
+            opacity: 0.5,
           }}
         />
 
@@ -163,7 +258,7 @@ export function Timeline() {
             if (entry.kind === "company") {
               const { company } = entry;
               return (
-                <Row key={entryKey(entry)} dot={<Dot big accent={company.accent} />}>
+                <Row key={entryKey(entry)} tick={<Tick major accent={company.accent} />}>
                   <h2
                     className="text-lg font-semibold tracking-tight"
                     style={{ color: company.accent }}
@@ -179,7 +274,7 @@ export function Timeline() {
 
             const { study } = entry;
             return (
-              <Row key={entryKey(entry)} dot={<Dot />}>
+              <Row key={entryKey(entry)} tick={<Tick />}>
                 <Link
                   href={`/case-studies/${study.slug}`}
                   className="group flex gap-4 rounded-lg outline-offset-4 transition-opacity hover:opacity-70"
@@ -206,6 +301,45 @@ export function Timeline() {
             );
           })}
         </div>
+
+        {/* The cap. Driven by the same --timeline-fill the notches are compared
+            against, so it cannot drift out of sync with them — one measurement,
+            one source of truth. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0"
+          style={{
+            left: CENTRE - 11,
+            width: 22,
+            height: 10,
+            transform: "translateY(calc(var(--timeline-fill, 0px) - 5px))",
+            borderRadius: 3,
+            background: "linear-gradient(160deg, #ffffff 0%, var(--cap) 42%, #dcdee2 100%)",
+            border: "1px solid var(--cap-edge)",
+            boxShadow: "0 1px 2px rgba(24,26,32,0.28), inset 0 1px 0 rgba(255,255,255,0.9)",
+          }}
+        >
+          {/* grip line down the middle of the cap */}
+          <span
+            className="absolute inset-x-1 top-1/2 block h-px -translate-y-1/2"
+            style={{ background: "rgba(70,74,84,0.45)" }}
+          />
+        </div>
+      </div>
+
+      {/* The fader's lower end, closing the +/− pair. */}
+      <div className="flex" style={{ width: GUTTER }} aria-hidden>
+        <svg width={GUTTER} height={22} viewBox={`0 0 ${GUTTER} 22`} className="block">
+          <line
+            x1={CENTRE - 6}
+            y1={12}
+            x2={CENTRE + 6}
+            y2={12}
+            stroke="var(--rail-lit)"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+          />
+        </svg>
       </div>
     </div>
   );

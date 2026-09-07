@@ -13,6 +13,17 @@
      reads them, so they don't need to become utility classes. */
   --rail: #d8dae0;
   --rail-lit: #3d4a8a;
+
+  /* Tempo fader. The timeline's milestones are notches on a milled channel
+     with a cap riding the scroll position; these are its materials. Lit from
+     the upper left, same as the turntable, so the two agree. */
+  --slot: #e8e9ec;
+  --slot-edge: #d3d5da;
+  /* Unlit notch. Deliberately darker than --rail: the notches sit on the
+     channel among its graduation marks, and at --rail they were lost in it. */
+  --tick: #9aa0ab;
+  --cap: #f7f8f9;
+  --cap-edge: #b9bcc2;
 }
 
 @theme inline {
@@ -41,13 +52,42 @@ body {
   }
 }
 
-/* Timeline dots. The scroll handler in Timeline.tsx toggles [data-lit] as the
-   fill passes each one; colour is pure CSS from there. Companies pass their
-   own accent in as --lit, studies inherit the rail indigo. */
-[data-dot] {
-  background: var(--rail);
+/* Fader notches. The scroll handler in Timeline.tsx toggles [data-lit] as the
+   cap passes each one; colour is pure CSS from there. Companies pass their own
+   accent in as --lit, studies inherit the rail indigo.
+
+   Background must not be set inline on the element: an inline style outranks
+   these rules and the notch could never light. */
+[data-tick] {
+  background: var(--tick);
 }
 
-[data-dot][data-lit] {
+[data-tick][data-lit] {
   background: var(--lit, var(--rail-lit));
+}
+
+/* The detent click as the cap crosses a notch. Notches are centred on the
+   channel, so scaleX expands outward from the centre line — it reads as a
+   mechanical click rather than a glow. Fires in both directions, so scrolling
+   back up feels the same as scrolling down. */
+@keyframes tick-pulse {
+  0% {
+    transform: scaleX(1);
+  }
+  35% {
+    transform: scaleX(2.1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+[data-tick][data-pulse] {
+  animation: tick-pulse 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tick][data-pulse] {
+    animation: none;
+  }
 }
