@@ -156,8 +156,22 @@ function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactN
    tempo. */
 function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
   return (
-    <div className="flex" style={{ width: GUTTER }} aria-hidden>
-      <svg width={GUTTER} height={20} viewBox={`0 0 ${GUTTER} 20`} className="block">
+    <div
+      /* Margin on the side facing the channel, so each glyph sits clear of the
+         track rather than crowding its end. Direction-aware because the minus
+         is above the rail and the plus below it. */
+      className={`flex ${sign === "minus" ? "mb-5" : "mt-5"}`}
+      style={{ width: GUTTER }}
+      aria-hidden
+    >
+      <svg
+        width={GUTTER}
+        height={20}
+        viewBox={`0 0 ${GUTTER} 20`}
+        /* Faint on purpose: these mark the fader's ends, they are not
+           milestones, and at full strength they competed with the notches. */
+        className="block opacity-[0.35]"
+      >
         <g stroke="var(--rail-lit)" strokeWidth={1.5} strokeLinecap="round">
           <line x1={CENTRE - 6} y1={10} x2={CENTRE + 6} y2={10} />
           {sign === "plus" && <line x1={CENTRE} y1={4} x2={CENTRE} y2={16} />}
