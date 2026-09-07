@@ -34,7 +34,17 @@ export function Shell() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 pb-32">
       <header className="flex flex-col items-center pt-24 text-center">
-        <Turntable disc={selected?.disc ?? null} className="w-full max-w-[420px]" />
+        {/* The drawing's bounding box is centred to within a pixel, but it does
+            not *look* centred: the bright platter sits at 42% of the width with
+            dark empty plinth to its right, so the eye reads the visual mass as
+            left of centre. This nudges it back optically. Fully centring the
+            platter would take 7.85% and leaves the box visibly right-heavy, so
+            this takes about two thirds of that. A percentage rather than pixels
+            so it scales with the drawing on narrow screens. */}
+        <Turntable
+          disc={selected?.disc ?? null}
+          className="w-full max-w-[420px] translate-x-[5%]"
+        />
 
         {selected ? (
           <>
