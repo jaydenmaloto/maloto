@@ -78,11 +78,13 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
         /* toggle() with an explicit second argument is idempotent, so this is
            a no-op write on the frames where nothing changed. */
         tick.el.toggleAttribute("data-lit", lit);
-        if (lit === wasLit) continue;
-        /* A genuine crossing. Restart the pulse by removing the attribute,
-           forcing a reflow so the browser drops the old animation, then
-           re-adding. The forced reflow only happens on the handful of frames
-           where the cap actually passes a notch. */
+        /* Forward crossings only. Unlighting on the way back up stays silent:
+           firing on both transitions re-triggered every notch on the way up
+           and read as noise rather than as a detent. */
+        if (!lit || wasLit) continue;
+        /* Restart the pulse by removing the attribute, forcing a reflow so the
+           browser drops the old animation, then re-adding. The forced reflow
+           only happens on the handful of frames where the cap passes a notch. */
         tick.el.removeAttribute("data-pulse");
         void tick.el.offsetWidth;
         tick.el.setAttribute("data-pulse", "");
@@ -149,57 +151,19 @@ function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactN
   );
 }
 
-/* The + at the head of the fader and the curve sweeping down into the channel.
-
-   Stroked in --rail, not --rail-lit: this is track the cap has not reached
-   yet, so it has to match the unlit channel it flows into. Stroking it in the
-   lit colour is what previously made it read as disconnected — a coloured
-   curve dead-ending into a grey line.
-
-   The curve's final control point shares the endpoint's x, so its tangent is
-   vertical where it meets the channel and there is no kink at the join. */
-function LeadIn() {
-  /* 76 is as far right as the + can sit: the intro paragraph beside it starts
-     36px further along, and the gap is fixed by the two max-widths. */
-  const W = 110;
-  const H = 140;
-  const PLUS_X = 76;
-  const CURVE = `M ${PLUS_X} 26 C ${PLUS_X} 92, ${CENTRE} 74, ${CENTRE} ${H}`;
+/* The fader's ends. A tempo fader runs minus at the top to plus at the bottom,
+   which is also the way round the CDJ has it: pushing the cap down raises
+   tempo. */
+function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
   return (
-    <svg
-      width={W}
-      height={H}
-      viewBox={`0 0 ${W} ${H}`}
-      aria-hidden
-      /* Once the timeline is pulled up alongside the intro, this element's box
-         overlaps the paragraph. It is decorative, so let clicks and text
-         selection pass straight through it. */
-      className="pointer-events-none block overflow-visible"
-    >
-      {/* + glyph, the fader's upper end */}
-      <g stroke="var(--rail-lit)" strokeWidth={1.5} strokeLinecap="round">
-        <line x1={PLUS_X - 6} y1={10} x2={PLUS_X + 6} y2={10} />
-        <line x1={PLUS_X} y1={4} x2={PLUS_X} y2={16} />
-      </g>
-      {/* A long, deep sweep rather than the previous shallow bend, stroked
-          twice to reproduce the channel's section: a darker lip under a
-          --slot bed. Stroking it once in a flat grey left a visible tonal
-          step where the curve met the channel's inset shading. */}
-      <path
-        d={CURVE}
-        fill="none"
-        stroke="rgba(30,32,40,0.13)"
-        strokeWidth={SLOT_W + 1.5}
-        strokeLinecap="round"
-      />
-      <path
-        d={CURVE}
-        fill="none"
-        stroke="var(--slot)"
-        strokeWidth={SLOT_W}
-        strokeLinecap="round"
-      />
-    </svg>
+    <div className="flex" style={{ width: GUTTER }} aria-hidden>
+      <svg width={GUTTER} height={20} viewBox={`0 0 ${GUTTER} 20`} className="block">
+        <g stroke="var(--rail-lit)" strokeWidth={1.5} strokeLinecap="round">
+          <line x1={CENTRE - 6} y1={10} x2={CENTRE + 6} y2={10} />
+          {sign === "plus" && <line x1={CENTRE} y1={4} x2={CENTRE} y2={16} />}
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -213,9 +177,13 @@ export function Timeline() {
 
   return (
     <div>
-      <LeadIn />
+      <EndGlyph sign="minus" />
 
-      <div ref={containerRef} className="relative">
+      {/* pt gives the channel a run of clear track above the first notch — the
+          head the curve used to occupy. The channel is absolutely positioned
+          across the whole container, so it covers the padding without needing
+          an element of its own. */}
+      <div ref={containerRef} className="relative pt-24">
         {/* The channel: milled into the page rather than drawn on it, with the
             CDJ's dense measurement scale coming free from a repeating gradient
             instead of generated elements — no DOM cost, and it scales to
@@ -245,11 +213,13 @@ export function Timeline() {
           aria-hidden
           className="absolute top-0 rounded-full"
           style={{
-            left: CENTRE - 0.5,
-            width: 1,
+            left: CENTRE - SLOT_W / 2,
+            width: SLOT_W,
             height: "var(--timeline-fill, 0px)",
-            background: "var(--rail-lit)",
-            opacity: 0.5,
+            background: "var(--slot-used)",
+            /* Same inset lip as the channel, so the trail reads as the same
+               milled slot in a worn tone rather than a bar laid over it. */
+            boxShadow: "inset 0 1px 2px rgba(30,32,40,0.18)",
           }}
         />
 
@@ -327,20 +297,7 @@ export function Timeline() {
         </div>
       </div>
 
-      {/* The fader's lower end, closing the +/− pair. */}
-      <div className="flex" style={{ width: GUTTER }} aria-hidden>
-        <svg width={GUTTER} height={22} viewBox={`0 0 ${GUTTER} 22`} className="block">
-          <line
-            x1={CENTRE - 6}
-            y1={12}
-            x2={CENTRE + 6}
-            y2={12}
-            stroke="var(--rail-lit)"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
+      <EndGlyph sign="plus" />
     </div>
   );
 }

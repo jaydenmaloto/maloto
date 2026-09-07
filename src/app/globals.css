@@ -22,6 +22,10 @@
   /* Unlit notch. Deliberately darker than --rail: the notches sit on the
      channel among its graduation marks, and at --rail they were lost in it. */
   --tick: #9aa0ab;
+  /* Traversed channel — track the cap has worn through. A few steps darker
+     than --slot, and deliberately grey: the indigo stays reserved for lit
+     notches so they remain the only accent on the rail. */
+  --slot-used: #b9bdc6;
   --cap: #f7f8f9;
   --cap-edge: #b9bcc2;
 }
