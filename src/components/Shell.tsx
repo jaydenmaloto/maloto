@@ -34,7 +34,7 @@ export function Shell() {
   return (
     <div className="mx-auto w-full max-w-5xl px-6 pb-32">
       <header className="flex flex-col items-center pt-14 text-center">
-        <Turntable disc={selected?.disc ?? null} className="w-full max-w-[620px]" />
+        <Turntable disc={selected?.disc ?? null} className="w-full max-w-[420px]" />
 
         {selected ? (
           <>
