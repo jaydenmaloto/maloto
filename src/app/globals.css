@@ -100,15 +100,17 @@ body {
 
    Distances here are in the SVG's *unsquashed* units, because this animates a
    group living inside the flatten() transform: everything vertical is
-   multiplied by K (0.424) on the way to the screen. -146 local units is
-   therefore about 62px of visible fall. Scale is uniform, which composes with
+   multiplied by K (0.424) on the way to the screen. -380 local units is
+   therefore about 160px of visible fall — shortened along with the duration,
+   because the original distance in two-thirds the time began to read as a cut
+   rather than a fall. Scale is uniform, which composes with
    the squash to read as the disc being nearer the camera on the way down.
 
    Two timing functions rather than one: gravity accelerates into the landing,
    then the settle eases out of it. */
 @keyframes record-drop {
   0% {
-    transform: translateY(-425px) scale(1.18);
+    transform: translateY(-380px) scale(1.16);
     opacity: 0;
     animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.55);
   }
@@ -143,7 +145,7 @@ body {
    none at all under reduced motion, where the disc does not fall and there is
    nothing to wait for. */
 .tt-arm {
-  transition: rotate 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: rotate 640ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tt-arm[data-cued] {

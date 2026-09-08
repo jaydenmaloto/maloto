@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCaseStudy } from "@/data/caseStudies";
 import { Turntable } from "@/components/Turntable";
 import { Timeline } from "@/components/Timeline";
@@ -12,7 +12,7 @@ const CASE_STUDY_PREFIX = "/case-studies/";
 const INTRO =
   "I work from the inside out: finding the behavior that matters, building the logic and infrastructure behind it, and turning that into experiences users trust and businesses can quickly build upon.";
 
-/* The fade duration lives in the literal class `duration-[260ms]` below, not
+/* The fade duration lives in the literal class `duration-[160ms]` below, not
    in a constant interpolated into it: Tailwind scans source text statically,
    so a class built at runtime is never generated and the transition silently
    does not exist. Keep the two in step by hand. */
@@ -23,6 +23,8 @@ const INTRO =
    and only moves when it can find a Page element that is out of view, and it
    explicitly skips elements "without rendered HTML" while looking. The route
    files here render null by design, so there is nothing for it to find. */
+const SCROLL_MS = 300;
+
 function scrollToTopThen(done: () => void) {
   /* Already there: navigate at once rather than making every repeat visit wait
      out an animation with nothing to animate. */
@@ -31,18 +33,34 @@ function scrollToTopThen(done: () => void) {
     return;
   }
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  /* Animated by hand rather than with behavior: "smooth", which runs for
+     however long the browser decides — around 400-500ms here, and not
+     adjustable. Owning the curve is the single biggest saving in the whole
+     sequence. */
+  const from = window.scrollY;
+  const start = performance.now();
+  let expected = from;
 
-  /* The deadline is not belt-and-braces, it is the point: a smooth scroll is
-     cancelled outright the moment the user touches a wheel or trackpad, and
-     scrollend support is still uneven. Without it an interrupted scroll would
-     strand the click having navigated nowhere. */
-  const deadline = performance.now() + 700;
   const tick = () => {
-    if (window.scrollY <= 0 || performance.now() > deadline) {
+    const elapsed = performance.now() - start;
+
+    /* If the page is not where we last put it, the user is scrolling. Stop
+       animating and navigate rather than fighting their wheel. */
+    if (Math.abs(window.scrollY - expected) > 12) {
       done();
       return;
     }
+
+    if (elapsed >= SCROLL_MS) {
+      window.scrollTo(0, 0);
+      done();
+      return;
+    }
+
+    const t = elapsed / SCROLL_MS;
+    const eased = 1 - Math.pow(1 - t, 3);
+    expected = Math.round(from * (1 - eased));
+    window.scrollTo(0, expected);
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -70,6 +88,23 @@ export function Shell() {
   const selectedSlug = slugFromPathname(pathname);
   const selected = selectedSlug ? getCaseStudy(selectedSlug) ?? null : null;
 
+  /* What is on the platter, which is deliberately not the same thing as what
+     the page is showing. The URL wins while you are on a study; memory fills
+     the gap when you go back to the list, so the record keeps playing until a
+     different project is picked. Seeded from the URL so a deep link arrives
+     with its record already on the deck. */
+  const [deckSlug, setDeckSlug] = useState(selectedSlug);
+  const [seenSlug, setSeenSlug] = useState(selectedSlug);
+  /* Landing on a study by any route — history, a typed URL — should also load
+     the deck, not just a click. React's documented way to adjust state when an
+     input changes is to set it during render; it re-runs this component
+     immediately without committing, so there is no extra paint. */
+  if (selectedSlug !== seenSlug) {
+    setSeenSlug(selectedSlug);
+    if (selectedSlug) setDeckSlug(selectedSlug);
+  }
+  const deckStudy = getCaseStudy(selectedSlug ?? deckSlug ?? "") ?? null;
+
   /* The fade is driven straight on the DOM rather than through state.
 
      Deriving a "leaving" flag from the pathname looks tidier but is wrong:
@@ -88,6 +123,11 @@ export function Shell() {
 
   const navigate = useCallback(
     (href: string) => {
+      /* Set before anything else: this is what releases the disc, so the fall
+         begins on the click rather than waiting for the content to swap. */
+      const next = slugFromPathname(href);
+      if (next) setDeckSlug(next);
+
       const root = rootRef.current;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const fading = !reduced && root ? [...root.querySelectorAll<HTMLElement>("[data-fade]")] : [];
@@ -125,14 +165,14 @@ export function Shell() {
             so the comfortable value is well short of it. A percentage rather
             than pixels so it scales with the drawing on narrow screens. */}
         <Turntable
-          disc={selected?.disc ?? null}
+          disc={deckStudy?.disc ?? null}
           className="w-full max-w-[360px] translate-x-[2.5%]"
         />
 
         {/* The heading fades with the body. The turntable deliberately does
             not: it is the one thing meant to persist across the change, and
             fading it would be the flicker this is trying to avoid. */}
-        <div data-fade className="w-full transition-opacity duration-[260ms]">
+        <div data-fade className="w-full transition-opacity duration-[160ms]">
         {selected ? (
           <>
             <h1 className="mt-10 text-2xl font-semibold tracking-tight">{selected.title}</h1>
@@ -166,7 +206,7 @@ export function Shell() {
           gets the normal offset: there is no rail to align to. */}
       <div
         data-fade
-        className={`mx-auto max-w-2xl transition-opacity duration-[260ms] ${
+        className={`mx-auto max-w-2xl transition-opacity duration-[160ms] ${
           selected ? "mt-14" : "mt-14 md:-mt-20"
         }`}
       >

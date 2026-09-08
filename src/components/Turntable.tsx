@@ -609,7 +609,7 @@ export function Turntable({ disc, className }: TurntableProps) {
                 down with it. */}
             <g
               clipPath="url(#tt-platter-clip)"
-              className="motion-safe:animate-[record-shadow-in_260ms_ease-out_360ms_both]"
+              className="motion-safe:animate-[record-shadow-in_150ms_ease-out_400ms_both]"
             >
               <circle
                 cx={PLATTER.cx + RECORD_CAST.x}
@@ -625,7 +625,12 @@ export function Turntable({ disc, className }: TurntableProps) {
                 flatten(), which multiplies vertical distance by K on the way to
                 the screen — see the record-drop keyframes. */}
             <g
-              className="motion-safe:animate-[record-drop_820ms_both]"
+              /* 520ms duration, 150ms delay — in the animation shorthand the first
+                 time is duration and the second is delay. The delay holds the
+                 disc at the 0% frame (invisible, up high) until the page has
+                 scrolled the deck into view, so the fall is never spent
+                 off-screen. */
+              className="motion-safe:animate-[record-drop_520ms_150ms_both]"
               style={{
                 transformOrigin: `${PLATTER.cx}px ${PLATTER.cy}px`,
                 transformBox: "view-box",
