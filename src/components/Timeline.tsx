@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { buildTimeline, type TimelineEntry } from "@/data/caseStudies";
 
@@ -11,6 +12,60 @@ const CENTRE = GUTTER / 2;
 /* Channel width. Notches cross it symmetrically, so they stay inside the
    gutter — hanging them off to one side, as the CDJ does, would overflow. */
 const SLOT_W = 5;
+
+/* Records already fetched. The HTTP cache dedupes anyway; this just avoids
+   creating an Image on every pointer event. */
+const warmed = new Set<string>();
+
+/* The list view never renders a record — only sleeves — so the first click on
+   a project fetches its disc PNG cold (107KB for most, 545KB for anthm) and
+   the platter sits bare until it lands. Warming it on intent means it is
+   already cached by the time the click happens. */
+function warmDisc(src: string) {
+  if (warmed.has(src)) return;
+  warmed.add(src);
+  /* window.Image, not Image: next/image is imported into this module under
+     that name and shadows the DOM constructor. */
+  const img = new window.Image();
+  img.src = src;
+}
+
+/* Scroll to the top, then run `done` once we are actually there.
+
+   Next will not do this for us: <Link> defaults to maintaining scroll
+   position and only moves when it can find a Page element that is out of
+   view, and it explicitly skips elements "without rendered HTML". The route
+   files here render null by design, so there is nothing for it to find. */
+function scrollToTopThen(done: () => void) {
+  /* Already there: navigate at once rather than making every repeat visit
+     wait out an animation with nothing to animate. */
+  if (window.scrollY <= 0) {
+    done();
+    return;
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo(0, 0);
+    done();
+    return;
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  /* The deadline is not belt-and-braces, it is the point: a smooth scroll is
+     cancelled outright the moment the user touches a wheel or trackpad, and
+     scrollend support is still uneven. Without it an interrupted scroll would
+     strand the click having navigated nowhere. */
+  const deadline = performance.now() + 700;
+  const tick = () => {
+    if (window.scrollY <= 0 || performance.now() > deadline) {
+      done();
+      return;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 function entryKey(entry: TimelineEntry) {
   return entry.kind === "company" ? `company:${entry.company.id}` : `study:${entry.study.slug}`;
@@ -185,6 +240,7 @@ function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
    entirely rather than keeping it as a sidebar, so there is no compact or
    selected variant to carry here. */
 export function Timeline() {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   useScrollLitRail(containerRef);
   const entries = buildTimeline();
@@ -261,6 +317,18 @@ export function Timeline() {
               <Row key={entryKey(entry)} tick={<Tick />}>
                 <Link
                   href={`/case-studies/${study.slug}`}
+                  /* Stays a real Link so prefetch, middle-click, right-click
+                     and assistive tech all keep working; only the plain left
+                     click is intercepted, to run the scroll before the swap. */
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    warmDisc(study.disc);
+                    scrollToTopThen(() => router.push(`/case-studies/${study.slug}`));
+                  }}
+                  onPointerEnter={() => warmDisc(study.disc)}
+                  onPointerDown={() => warmDisc(study.disc)}
+                  onFocus={() => warmDisc(study.disc)}
                   className="group flex gap-4 rounded-lg outline-offset-4 transition-opacity hover:opacity-70"
                 >
                   {study.sleeve && (
