@@ -155,6 +155,37 @@ function Tick({ major, accent }: { major?: boolean; accent?: string }) {
   );
 }
 
+/* Three bars beside the study whose record is on the deck. Durations differ so
+   they fall out of step rather than pulsing as one block; the negative delays
+   mean they are already mid-cycle on the first frame instead of all starting
+   flat together. Under reduced motion the animation drops and they stay at
+   their static heights, so the indication survives without the movement. */
+function NowPlayingBars() {
+  return (
+    <span className="ml-2 inline-flex h-3 items-end gap-[2px] align-middle">
+      <span className="sr-only">Now playing</span>
+      {[
+        { h: 6, dur: "620ms", delay: "-120ms" },
+        { h: 11, dur: "480ms", delay: "-320ms" },
+        { h: 8, dur: "780ms", delay: "-40ms" },
+      ].map((bar) => (
+        <span
+          key={bar.dur}
+          aria-hidden
+          className="block w-[2px] rounded-[1px] motion-safe:animate-[eq-bar_var(--eq-dur)_ease-in-out_var(--eq-delay)_infinite]"
+          style={{
+            height: bar.h,
+            background: "var(--rail-lit)",
+            transformOrigin: "bottom",
+            ["--eq-dur" as string]: bar.dur,
+            ["--eq-delay" as string]: bar.delay,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
 /* A row: fixed gutter holding the notch, then the content. Keeping the notch
    in the row's own flow is what makes it line up with the heading beside it. */
 function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactNode }) {
@@ -201,7 +232,13 @@ function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
 /* Rendered only on the browsing view. The case study page drops the timeline
    entirely rather than keeping it as a sidebar, so there is no compact or
    selected variant to carry here. */
-export function Timeline({ onNavigate }: { onNavigate: (href: string) => void }) {
+export function Timeline({
+  onNavigate,
+  nowPlayingSlug,
+}: {
+  onNavigate: (href: string) => void;
+  nowPlayingSlug: string | null;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   useScrollLitRail(containerRef);
   const entries = buildTimeline();
@@ -304,7 +341,10 @@ export function Timeline({ onNavigate }: { onNavigate: (href: string) => void })
                     />
                   )}
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold">{study.title}</span>
+                    <span className="block text-sm font-semibold">
+                      {study.title}
+                      {study.slug === nowPlayingSlug && <NowPlayingBars />}
+                    </span>
                     <span className="mt-1 line-clamp-2 block text-sm leading-6 text-muted">
                       {study.subtitle}
                     </span>

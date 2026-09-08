@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 /* A three-quarter view of a belt-drive deck, drawn as a flat projection rather
    than real 3D. Every circle in the object's top plane becomes an ellipse with
    the same squash factor K, so the platter, record, spindle and feet all sit in
@@ -156,6 +158,33 @@ export interface TurntableProps {
 
 export function Turntable({ disc, className }: TurntableProps) {
   const playing = disc !== null;
+
+  /* Which arm keyframe to run. A restarting CSS animation always snaps to its
+     own 0% frame, and the arm's resting rotate is the playing angle whether
+     this is the first record or a swap — so CSS cannot distinguish them and
+     this one bit has to. Set during render, which is React's documented way to
+     adjust state when an input changes. */
+  const [prevDisc, setPrevDisc] = useState(disc);
+  const [recue, setRecue] = useState(false);
+  if (disc !== prevDisc) {
+    setRecue(prevDisc !== null && disc !== null);
+    setPrevDisc(disc);
+  }
+
+  /* Both arm groups — the arm and its cast shadow — share this so they stay
+     locked together. The key replays the animation on every disc change. */
+  /* Both class names written out in full, never interpolated: Tailwind scans
+     source text statically, so a class assembled at runtime is never generated
+     and the animation silently would not exist. */
+  const armAnim = !playing
+    ? ""
+    : recue
+      ? "motion-safe:animate-[arm-recue_1200ms_both]"
+      : "motion-safe:animate-[arm-cue_1200ms_both]";
+  const armAngles = {
+    ["--arm-parked" as string]: `${ARM_PARKED_DEG}deg`,
+    ["--arm-playing" as string]: `${ARM_PLAYING_DEG}deg`,
+  };
 
   return (
     <svg
@@ -810,9 +839,10 @@ export function Turntable({ disc, className }: TurntableProps) {
             transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
             transformBox: "view-box",
             rotate: `${playing ? ARM_PLAYING_DEG : ARM_PARKED_DEG}deg`,
+            ...armAngles,
           }}
-          className="tt-arm"
-          data-cued={playing || undefined}
+          className={armAnim}
+          key={disc ?? "empty"}
         >
           <line
             x1={PIVOT.x + ARM_CAST.x}
@@ -907,9 +937,10 @@ export function Turntable({ disc, className }: TurntableProps) {
           transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
           transformBox: "view-box",
           rotate: `${playing ? ARM_PLAYING_DEG : ARM_PARKED_DEG}deg`,
+          ...armAngles,
         }}
-        className="tt-arm"
-        data-cued={playing || undefined}
+        className={armAnim}
+        key={disc ?? "empty"}
       >
         {/* Counterweight stub and mass behind the pivot */}
         <line x1={PIVOT.x} y1={PIVOT.y} x2={PIVOT.x + 44} y2={PIVOT.y - 25} stroke="#9a9da3" strokeWidth={6} strokeLinecap="round" />

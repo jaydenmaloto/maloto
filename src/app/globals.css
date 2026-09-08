@@ -140,25 +140,54 @@ body {
   }
 }
 
-/* The tonearm waits for the record to land before cueing over it. Delay only
-   in the cued direction — returning to the rest should be immediate — and
-   none at all under reduced motion, where the disc does not fall and there is
-   nothing to wait for. */
-.tt-arm {
-  transition: rotate 640ms cubic-bezier(0.22, 1, 0.36, 1);
+/* The tonearm, as a keyframe animation keyed on the disc rather than a
+   transition, so it replays every time the record changes.
+
+   Two keyframes, not one, and the reason is that a restarting animation always
+   snaps to its own 0% frame. At the moment a record arrives the arm's resting
+   rotate is the playing angle in both cases — first record and swap — so CSS
+   alone cannot tell them apart. Starting every run parked would snap the arm to
+   rest on a swap; starting every run at the playing angle would flick it across
+   an empty platter on the first cue. Turntable.tsx decides which to use.
+
+   At 1200ms: lift-off by ~190ms, held clear through the disc landing (~525ms),
+   back down by 1200ms. Same envelope as the transition it replaces (560ms delay
+   plus 640ms swing), so the lift costs nothing in total time.
+
+   Angles come in as custom properties from the ARM_*_DEG constants, so those
+   stay the single source of truth instead of being restated here. */
+@keyframes arm-cue {
+  0%,
+  47% {
+    rotate: var(--arm-parked);
+  }
+  100% {
+    rotate: var(--arm-playing);
+  }
 }
 
-.tt-arm[data-cued] {
-  transition-delay: 560ms;
+@keyframes arm-recue {
+  0% {
+    rotate: var(--arm-playing);
+  }
+  16%,
+  47% {
+    rotate: var(--arm-parked);
+  }
+  100% {
+    rotate: var(--arm-playing);
+  }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* The [data-cued] selector below is more specific than a bare .tt-arm, and a
-     media query adds no specificity of its own, so the override has to match
-     it or the arm keeps waiting 560ms for a record that never fell. */
-  .tt-arm,
-  .tt-arm[data-cued] {
-    transition: none;
-    transition-delay: 0ms;
+/* Now-playing bars beside the active study in the list. One keyframe, three
+   spans at different durations so they fall out of step rather than pulsing
+   together. */
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
   }
 }

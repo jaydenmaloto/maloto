@@ -213,7 +213,7 @@ export function Shell() {
         {selected ? (
           <CaseStudyContent caseStudy={selected} onNavigate={navigate} />
         ) : (
-          <Timeline onNavigate={navigate} />
+          <Timeline onNavigate={navigate} nowPlayingSlug={deckStudy?.slug ?? null} />
         )}
       </div>
     </div>
