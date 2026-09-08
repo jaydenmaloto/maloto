@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { CaseStudy } from "@/data/caseStudies";
 
@@ -5,12 +7,25 @@ import type { CaseStudy } from "@/data/caseStudies";
    CaseStudyDetail — the text / image / split shapes still describe the data
    well. What's gone is the hero, the gallery carousel and the modal-vs-page
    branching; the shell owns the header now, and there is no modal. */
-export function CaseStudyContent({ caseStudy }: { caseStudy: CaseStudy }) {
+export function CaseStudyContent({
+  caseStudy,
+  onNavigate,
+}: {
+  caseStudy: CaseStudy;
+  onNavigate: (href: string) => void;
+}) {
   return (
     <article className="flex flex-col gap-10 pb-24">
       <div>
         <Link
           href="/"
+          /* Same interception as the timeline rows: plain left click runs the
+             fade-and-scroll sequence, anything else stays a normal link. */
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            e.preventDefault();
+            onNavigate("/");
+          }}
           className="text-sm text-muted underline-offset-4 transition-colors hover:text-foreground hover:underline"
         >
           ‹ All work

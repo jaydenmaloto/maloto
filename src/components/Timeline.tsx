@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { buildTimeline, type TimelineEntry } from "@/data/caseStudies";
 
@@ -28,43 +27,6 @@ function warmDisc(src: string) {
      that name and shadows the DOM constructor. */
   const img = new window.Image();
   img.src = src;
-}
-
-/* Scroll to the top, then run `done` once we are actually there.
-
-   Next will not do this for us: <Link> defaults to maintaining scroll
-   position and only moves when it can find a Page element that is out of
-   view, and it explicitly skips elements "without rendered HTML". The route
-   files here render null by design, so there is nothing for it to find. */
-function scrollToTopThen(done: () => void) {
-  /* Already there: navigate at once rather than making every repeat visit
-     wait out an animation with nothing to animate. */
-  if (window.scrollY <= 0) {
-    done();
-    return;
-  }
-
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.scrollTo(0, 0);
-    done();
-    return;
-  }
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-
-  /* The deadline is not belt-and-braces, it is the point: a smooth scroll is
-     cancelled outright the moment the user touches a wheel or trackpad, and
-     scrollend support is still uneven. Without it an interrupted scroll would
-     strand the click having navigated nowhere. */
-  const deadline = performance.now() + 700;
-  const tick = () => {
-    if (window.scrollY <= 0 || performance.now() > deadline) {
-      done();
-      return;
-    }
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
 }
 
 function entryKey(entry: TimelineEntry) {
@@ -239,8 +201,7 @@ function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
 /* Rendered only on the browsing view. The case study page drops the timeline
    entirely rather than keeping it as a sidebar, so there is no compact or
    selected variant to carry here. */
-export function Timeline() {
-  const router = useRouter();
+export function Timeline({ onNavigate }: { onNavigate: (href: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   useScrollLitRail(containerRef);
   const entries = buildTimeline();
@@ -324,7 +285,7 @@ export function Timeline() {
                     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                     e.preventDefault();
                     warmDisc(study.disc);
-                    scrollToTopThen(() => router.push(`/case-studies/${study.slug}`));
+                    onNavigate(`/case-studies/${study.slug}`);
                   }}
                   onPointerEnter={() => warmDisc(study.disc)}
                   onPointerDown={() => warmDisc(study.disc)}

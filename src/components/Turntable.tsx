@@ -158,7 +158,17 @@ export function Turntable({ disc, className }: TurntableProps) {
   const playing = disc !== null;
 
   return (
-    <svg viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} className={className} aria-hidden>
+    <svg
+      viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
+      className={className}
+      aria-hidden
+      /* The record falls in from above the deck, which means from outside the
+         viewBox. An SVG root clips to its viewBox by default, so without this
+         the disc would appear at the top edge rather than arriving from off
+         it. Nothing sits above the turntable but header padding, so there is
+         room for it to fall through. */
+      style={{ overflow: "visible" }}
+    >
       <defs>
         {/* Light sits up and to the left. Every gradient below agrees with
             that, which is the main thing selling the form. */}
@@ -589,11 +599,18 @@ export function Turntable({ disc, className }: TurntableProps) {
         </g>
 
         {playing && (
-          <>
-            {/* The record's own shadow on the platter, before anything of the
-                record itself is drawn. Offset down-right, and only a couple of
-                millimetres wide because the disc sits almost flush. */}
-            <g clipPath="url(#tt-platter-clip)">
+          /* Keyed on the disc so switching between studies replays the drop:
+             `playing` stays true across that change, so without a key the
+             group would never remount and the record would simply swap. */
+          <g key={disc}>
+            {/* The record's own shadow on the platter. Left outside the falling
+                group on purpose — a shadow belongs to the platter, not to the
+                disc, so it fades in as the record arrives rather than riding
+                down with it. */}
+            <g
+              clipPath="url(#tt-platter-clip)"
+              className="motion-safe:animate-[record-shadow-in_260ms_ease-out_360ms_both]"
+            >
               <circle
                 cx={PLATTER.cx + RECORD_CAST.x}
                 cy={PLATTER.cy + RECORD_CAST.y}
@@ -603,6 +620,17 @@ export function Turntable({ disc, className }: TurntableProps) {
               />
             </g>
 
+            {/* Everything that is the record itself falls together. The
+                translate is in unsquashed units because this group sits inside
+                flatten(), which multiplies vertical distance by K on the way to
+                the screen — see the record-drop keyframes. */}
+            <g
+              className="motion-safe:animate-[record-drop_820ms_both]"
+              style={{
+                transformOrigin: `${PLATTER.cx}px ${PLATTER.cy}px`,
+                transformBox: "view-box",
+              }}
+            >
             {/* Vinyl edge: the same cylinder-wall construction as the platter
                 rim, only a few units tall. This is what gives the disc
                 thickness instead of letting it lie in the platter's own plane. */}
@@ -752,7 +780,8 @@ export function Turntable({ disc, className }: TurntableProps) {
             <circle cx={PLATTER.cx} cy={PLATTER.cy} r={RECORD_R} fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth={2} />
             <circle cx={PLATTER.cx} cy={PLATTER.cy} r={RECORD_R - 0.8} fill="none"
                     stroke="rgba(255,255,255,0.55)" strokeWidth={1.6} mask="url(#tt-lightside)" />
-          </>
+            </g>
+          </g>
         )}
 
         {/* A dark seam right under the lip: without it the rim melts into the
@@ -776,8 +805,9 @@ export function Turntable({ disc, className }: TurntableProps) {
             transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
             transformBox: "view-box",
             rotate: `${playing ? ARM_PLAYING_DEG : ARM_PARKED_DEG}deg`,
-            transition: "rotate 900ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
+          className="tt-arm"
+          data-cued={playing || undefined}
         >
           <line
             x1={PIVOT.x + ARM_CAST.x}
@@ -872,8 +902,9 @@ export function Turntable({ disc, className }: TurntableProps) {
           transformOrigin: `${PIVOT.x}px ${PIVOT.y}px`,
           transformBox: "view-box",
           rotate: `${playing ? ARM_PLAYING_DEG : ARM_PARKED_DEG}deg`,
-          transition: "rotate 900ms cubic-bezier(0.22, 1, 0.36, 1)",
         }}
+        className="tt-arm"
+        data-cued={playing || undefined}
       >
         {/* Counterweight stub and mass behind the pivot */}
         <line x1={PIVOT.x} y1={PIVOT.y} x2={PIVOT.x + 44} y2={PIVOT.y - 25} stroke="#9a9da3" strokeWidth={6} strokeLinecap="round" />

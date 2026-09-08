@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef } from "react";
 import { getCaseStudy } from "@/data/caseStudies";
 import { Turntable } from "@/components/Turntable";
 import { Timeline } from "@/components/Timeline";
@@ -10,6 +11,42 @@ const CASE_STUDY_PREFIX = "/case-studies/";
 
 const INTRO =
   "I work from the inside out: finding the behavior that matters, building the logic and infrastructure behind it, and turning that into experiences users trust and businesses can quickly build upon.";
+
+/* The fade duration lives in the literal class `duration-[260ms]` below, not
+   in a constant interpolated into it: Tailwind scans source text statically,
+   so a class built at runtime is never generated and the transition silently
+   does not exist. Keep the two in step by hand. */
+
+/* Scroll to the top, then run `done` once we are actually there.
+
+   Next will not do this for us: <Link> defaults to maintaining scroll position
+   and only moves when it can find a Page element that is out of view, and it
+   explicitly skips elements "without rendered HTML" while looking. The route
+   files here render null by design, so there is nothing for it to find. */
+function scrollToTopThen(done: () => void) {
+  /* Already there: navigate at once rather than making every repeat visit wait
+     out an animation with nothing to animate. */
+  if (window.scrollY <= 0) {
+    done();
+    return;
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  /* The deadline is not belt-and-braces, it is the point: a smooth scroll is
+     cancelled outright the moment the user touches a wheel or trackpad, and
+     scrollend support is still uneven. Without it an interrupted scroll would
+     strand the click having navigated nowhere. */
+  const deadline = performance.now() + 700;
+  const tick = () => {
+    if (window.scrollY <= 0 || performance.now() > deadline) {
+      done();
+      return;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 function slugFromPathname(pathname: string) {
   if (!pathname.startsWith(CASE_STUDY_PREFIX)) return null;
@@ -28,11 +65,54 @@ function slugFromPathname(pathname: string) {
    crawlable. */
 export function Shell() {
   const pathname = usePathname();
+  const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
   const selectedSlug = slugFromPathname(pathname);
   const selected = selectedSlug ? getCaseStudy(selectedSlug) ?? null : null;
 
+  /* The fade is driven straight on the DOM rather than through state.
+
+     Deriving a "leaving" flag from the pathname looks tidier but is wrong:
+     the flag would still be set when the user presses Back, and the body
+     would be stuck invisible. Writing opacity imperatively and restoring it
+     on every pathname change is self-correcting — forward, back, or a URL
+     typed in all land the same way — and it keeps setState out of an effect,
+     which the React Compiler lint here forbids. */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    for (const el of root.querySelectorAll<HTMLElement>("[data-fade]")) {
+      el.style.opacity = "1";
+    }
+  }, [pathname]);
+
+  const navigate = useCallback(
+    (href: string) => {
+      const root = rootRef.current;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const fading = !reduced && root ? [...root.querySelectorAll<HTMLElement>("[data-fade]")] : [];
+
+      for (const el of fading) el.style.opacity = "0";
+
+      /* If the push never resolves the effect above never runs, so restore
+         opacity on a timer as well. Once the path has changed this is a no-op. */
+      const restore = window.setTimeout(() => {
+        for (const el of fading) el.style.opacity = "1";
+      }, 1500);
+
+      scrollToTopThen(() => {
+        router.push(href);
+        window.clearTimeout(restore);
+        window.setTimeout(() => {
+          for (const el of fading) el.style.opacity = "1";
+        }, 1200);
+      });
+    },
+    [router],
+  );
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 pb-32">
+    <div ref={rootRef} className="mx-auto w-full max-w-5xl px-6 pb-32">
       <header className="flex flex-col items-center pt-24 text-center">
         {/* The drawing's bounding box is centred to within a pixel, but it does
             not *look* centred: the bright platter sits at 42% of the width with
@@ -49,6 +129,10 @@ export function Shell() {
           className="w-full max-w-[360px] translate-x-[2.5%]"
         />
 
+        {/* The heading fades with the body. The turntable deliberately does
+            not: it is the one thing meant to persist across the change, and
+            fading it would be the flicker this is trying to avoid. */}
+        <div data-fade className="w-full transition-opacity duration-[260ms]">
         {selected ? (
           <>
             <h1 className="mt-10 text-2xl font-semibold tracking-tight">{selected.title}</h1>
@@ -64,9 +148,10 @@ export function Shell() {
             {/* max-w-md, not xl: the rail runs up the left margin beside this
                 paragraph, and the gap between them is (2xl - this) / 2. At xl
                 that left only 34px and the lead-in's + landed on the text. */}
-            <p className="mt-3 max-w-md text-sm leading-6 text-muted">{INTRO}</p>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted">{INTRO}</p>
           </>
         )}
+        </div>
       </header>
 
       {/* The timeline is the browsing surface and nothing else: once you are
@@ -79,8 +164,17 @@ export function Shell() {
           up — at 1440 the rail clears the intro text by ~36px, but on a narrow
           viewport both span the full column and would collide. A case study
           gets the normal offset: there is no rail to align to. */}
-      <div className={`mx-auto max-w-2xl ${selected ? "mt-14" : "mt-14 md:-mt-20"}`}>
-        {selected ? <CaseStudyContent caseStudy={selected} /> : <Timeline />}
+      <div
+        data-fade
+        className={`mx-auto max-w-2xl transition-opacity duration-[260ms] ${
+          selected ? "mt-14" : "mt-14 md:-mt-20"
+        }`}
+      >
+        {selected ? (
+          <CaseStudyContent caseStudy={selected} onNavigate={navigate} />
+        ) : (
+          <Timeline onNavigate={navigate} />
+        )}
       </div>
     </div>
   );
