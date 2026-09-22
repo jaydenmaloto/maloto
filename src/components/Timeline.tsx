@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { buildTimeline, type TimelineEntry } from "@/data/caseStudies";
 
-/* Gutter width, and therefore the centre line the channel is milled on. */
+/* Gutter width, and therefore the centre line the rail runs down. */
 const GUTTER = 28;
 const CENTRE = GUTTER / 2;
-/* Channel width. Notches cross it symmetrically, so they stay inside the
-   gutter — hanging them off to one side, as the CDJ does, would overflow. */
-const SLOT_W = 5;
+/* Hairline track. Wide enough to read at a glance, thin enough to stay
+   furniture rather than a component in its own right. */
+const RAIL_W = 2;
+/* Milestone dots. Companies get the larger one, which is what carries the
+   hierarchy the old notch widths carried. */
+const DOT = 6;
+const DOT_MAJOR = 10;
+/* The leading edge of the fill. Slightly larger than a milestone so it reads
+   as the thing doing the moving. */
+const HEAD = 8;
 
 /* Records already fetched. The HTTP cache dedupes anyway; this just avoids
    creating an Image on every pointer event. */
@@ -33,10 +40,10 @@ function entryKey(entry: TimelineEntry) {
   return entry.kind === "company" ? `company:${entry.company.id}` : `study:${entry.study.slug}`;
 }
 
-/* One scroll listener drives the cap's position and which notches are lit, so
-   a notch can never light early or late relative to the cap — they are the
-   same measurement. Neither writes React state: the position goes out as a
-   custom property and the notches as data attributes, so scrolling never
+/* One scroll listener drives the fill's height and which dots are lit, so a
+   dot can never light early or late relative to the leading edge — they are
+   the same measurement. Neither writes React state: the position goes out as a
+   custom property and the dots as data attributes, so scrolling never
    re-renders. */
 function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
@@ -51,7 +58,7 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
       if (!el) return;
       /* Measured off bounding rects rather than offsetTop. offsetTop is
          relative to each element's own offsetParent, and the container is
-         positioned, so mixing the two frames put every notch at a negative
+         positioned, so mixing the two frames put every dot at a negative
          offset and lit the whole rail on load. Both rects are read in the same
          frame, so the delta between them is scroll-independent. */
       const base = el.getBoundingClientRect().top;
@@ -67,20 +74,20 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
       if (!el) return;
       const rect = el.getBoundingClientRect();
 
-      /* The cap's travel is mapped to how far the document has scrolled, not
+      /* The fill's travel is mapped to how far the document has scrolled, not
          to a fixed line down the viewport.
 
          A viewport playhead is the obvious approach and it was the first one
          here, but it silently breaks on a short page: with four studies the
          document only scrolls ~480px, the foot of the rail never reaches the
-         line, and half the notches could never light at all. Mapping to scroll
-         progress guarantees the cap traverses the whole channel and every
-         notch gets passed, however little content there is.
+         line, and half the dots could never light at all. Mapping to scroll
+         progress guarantees the fill traverses the whole track and every
+         milestone gets passed, however little content there is.
 
          When the rail is most of the page — which it is here — the two
-         behave almost identically anyway: the cap's drift down the track
+         behave almost identically anyway: the head's drift down the track
          cancels the track's own scrolling, so it still reads as a playhead
-         holding position while the notches move past it.
+         holding position while the rows move past it.
 
          A page that doesn't scroll at all has been seen in full, so
          everything counts as reached. */
@@ -96,12 +103,12 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
            a no-op write on the frames where nothing changed. */
         tick.el.toggleAttribute("data-lit", lit);
         /* Forward crossings only. Unlighting on the way back up stays silent:
-           firing on both transitions re-triggered every notch on the way up
-           and read as noise rather than as a detent. */
+           firing on both transitions re-triggered every dot on the way up and
+           read as noise rather than as an arrival. */
         if (!lit || wasLit) continue;
         /* Restart the pulse by removing the attribute, forcing a reflow so the
            browser drops the old animation, then re-adding. The forced reflow
-           only happens on the handful of frames where the cap passes a notch. */
+           only happens on the handful of frames where the head passes a dot. */
         tick.el.removeAttribute("data-pulse");
         void tick.el.offsetWidth;
         tick.el.setAttribute("data-pulse", "");
@@ -120,7 +127,7 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", measure);
     /* Content height changes as fonts load and images decode, which moves
-       every notch underneath them. */
+       every dot underneath them. */
     const observer = new ResizeObserver(measure);
     observer.observe(container);
 
@@ -133,22 +140,24 @@ function useScrollLitRail(containerRef: React.RefObject<HTMLDivElement | null>) 
   }, [containerRef]);
 }
 
-/* A milestone notch, crossing the channel symmetrically. Companies get a wider,
-   heavier mark than studies, which is what carries the hierarchy the old dots
-   carried through size. */
+/* A milestone dot sitting on the track. The page-coloured ring is what lets it
+   sit *on* the rail rather than the rail running visibly through it — cheaper
+   and crisper than masking the track behind each one. */
 function Tick({ major, accent }: { major?: boolean; accent?: string }) {
+  const size = major ? DOT_MAJOR : DOT;
   return (
     <span
       data-tick
       aria-hidden
-      /* relative so it paints above the channel. The channel is absolutely
-         positioned and the notches are in normal flow, so without this the
-         channel wins the paint order and each notch reads as two disconnected
-         dashes either side of the slot rather than one stamped detent. */
-      className="relative mt-2 block shrink-0 rounded-[1px] transition-colors duration-300"
+      /* relative so it paints above the track, which is absolutely positioned
+         while the dots sit in normal flow. mt lines the dot up with the middle
+         of the first line of the heading beside it — the two sizes pair with
+         the two type sizes, so they need different offsets. */
+      className={`relative block shrink-0 rounded-full ${major ? "mt-2" : "mt-[7px]"}`}
       style={{
-        width: major ? 21 : 13,
-        height: major ? 3 : 2,
+        width: size,
+        height: size,
+        boxShadow: `0 0 0 4px var(--background)`,
         ["--lit" as string]: accent ?? "var(--rail-lit)",
       }}
     />
@@ -186,8 +195,8 @@ function NowPlayingBars() {
   );
 }
 
-/* A row: fixed gutter holding the notch, then the content. Keeping the notch
-   in the row's own flow is what makes it line up with the heading beside it. */
+/* A row: fixed gutter holding the dot, then the content. Keeping the dot in
+   the row's own flow is what makes it line up with the heading beside it. */
 function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactNode }) {
   return (
     <div className="flex gap-5">
@@ -195,36 +204,6 @@ function Row({ children, tick }: { children: React.ReactNode; tick: React.ReactN
         {tick}
       </div>
       <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
-}
-
-/* The fader's ends. A tempo fader runs minus at the top to plus at the bottom,
-   which is also the way round the CDJ has it: pushing the cap down raises
-   tempo. */
-function EndGlyph({ sign }: { sign: "plus" | "minus" }) {
-  return (
-    <div
-      /* Margin on the side facing the channel, so each glyph sits clear of the
-         track rather than crowding its end. Direction-aware because the minus
-         is above the rail and the plus below it. */
-      className={`flex ${sign === "minus" ? "mb-5" : "mt-5"}`}
-      style={{ width: GUTTER }}
-      aria-hidden
-    >
-      <svg
-        width={GUTTER}
-        height={20}
-        viewBox={`0 0 ${GUTTER} 20`}
-        /* Faint on purpose: these mark the fader's ends, they are not
-           milestones, and at full strength they competed with the notches. */
-        className="block opacity-[0.35]"
-      >
-        <g stroke="var(--rail-lit)" strokeWidth={1.5} strokeLinecap="round">
-          <line x1={CENTRE - 6} y1={10} x2={CENTRE + 6} y2={10} />
-          {sign === "plus" && <line x1={CENTRE} y1={4} x2={CENTRE} y2={16} />}
-        </g>
-      </svg>
     </div>
   );
 }
@@ -244,143 +223,120 @@ export function Timeline({
   const entries = buildTimeline();
 
   return (
-    <div>
-      <EndGlyph sign="minus" />
+    /* pt gives the track a run of clear rail above the first milestone, so the
+       progress has somewhere to start from. The track is absolutely positioned
+       across the whole container, so it covers the padding without needing an
+       element of its own. */
+    <div ref={containerRef} className="relative pt-24">
+      {/* The track. Both ends fade out rather than stopping flat: a hairline
+          that simply ends reads as a cut-off border, and the fade is what
+          makes it read as a continuous spine the content hangs from. */}
+      <div
+        aria-hidden
+        className="absolute top-0 bottom-0 rounded-full"
+        style={{
+          left: CENTRE - RAIL_W / 2,
+          width: RAIL_W,
+          background: "var(--rail)",
+          maskImage: "linear-gradient(to bottom, transparent, #000 56px, #000 calc(100% - 56px), transparent)",
+        }}
+      />
 
-      {/* pt gives the channel a run of clear track above the first notch — the
-          head the curve used to occupy. The channel is absolutely positioned
-          across the whole container, so it covers the padding without needing
-          an element of its own. */}
-      <div ref={containerRef} className="relative pt-24">
-        {/* The channel: milled into the page rather than drawn on it, with the
-            CDJ's dense measurement scale coming free from a repeating gradient
-            instead of generated elements — no DOM cost, and it scales to
-            whatever height the rail ends up. */}
-        <div
-          aria-hidden
-          className="absolute top-0 bottom-0 rounded-full"
-          style={{
-            left: CENTRE - SLOT_W / 2,
-            width: SLOT_W,
-            /* Graduations kept faint on purpose. At full strength they read
-               as a dashed line and swallowed the milestone notches sitting on
-               top of them; the slot has to stay a surface, not a pattern. */
-            background: `repeating-linear-gradient(
-              to bottom,
-              rgba(120,126,140,0.16) 0px, rgba(120,126,140,0.16) 1px,
-              var(--slot) 1px, var(--slot) 7px
-            )`,
-            boxShadow: "inset 0 1px 2px rgba(30,32,40,0.18), 0 1px 0 rgba(255,255,255,0.8)",
-          }}
-        />
+      {/* Progress. Fades in from the top for the same reason the track does,
+          so the two share an edge instead of the fill starting as a hard cap
+          over a ghosted track. */}
+      <div
+        aria-hidden
+        className="absolute top-0 rounded-full"
+        style={{
+          left: CENTRE - RAIL_W / 2,
+          width: RAIL_W,
+          height: "var(--timeline-fill, 0px)",
+          background: "var(--rail-lit)",
+          maskImage: "linear-gradient(to bottom, transparent, #000 56px)",
+        }}
+      />
 
-        {/* Traversed distance. Real faders don't fill, but the cue is worth the
-            small departure — it is what makes the cap read as having come from
-            somewhere. */}
-        <div
-          aria-hidden
-          className="absolute top-0 rounded-full"
-          style={{
-            left: CENTRE - SLOT_W / 2,
-            width: SLOT_W,
-            height: "var(--timeline-fill, 0px)",
-            background: "var(--slot-used)",
-            /* Same inset lip as the channel, so the trail reads as the same
-               milled slot in a worn tone rather than a bar laid over it. */
-            boxShadow: "inset 0 1px 2px rgba(30,32,40,0.18)",
-          }}
-        />
+      {/* The leading edge, driven by the same --timeline-fill the dots are
+          compared against, so it cannot drift out of sync with them — one
+          measurement, one source of truth. A soft halo rather than a bevel:
+          the point is to show where you are, not to look like a part. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-0 rounded-full"
+        style={{
+          left: CENTRE - HEAD / 2,
+          width: HEAD,
+          height: HEAD,
+          transform: `translateY(calc(var(--timeline-fill, 0px) - ${HEAD / 2}px))`,
+          background: "var(--rail-lit)",
+          boxShadow: "0 0 0 4px var(--background), 0 0 0 7px color-mix(in srgb, var(--rail-lit) 16%, transparent)",
+        }}
+      />
 
-        <div className="flex flex-col gap-10">
-          {entries.map((entry) => {
-            if (entry.kind === "company") {
-              const { company } = entry;
-              return (
-                <Row key={entryKey(entry)} tick={<Tick major accent={company.accent} />}>
-                  <h2
-                    className="text-lg font-semibold tracking-tight"
-                    style={{ color: company.accent }}
-                  >
-                    {company.name}
-                  </h2>
-                  <p className="text-lg tracking-tight">{company.role}</p>
-                  <p className="mt-0.5 text-xs text-muted">{company.period}</p>
-                  <p className="mt-3 max-w-prose text-sm leading-6 text-muted">{company.blurb}</p>
-                </Row>
-              );
-            }
-
-            const { study } = entry;
+      <div className="flex flex-col gap-10">
+        {entries.map((entry) => {
+          if (entry.kind === "company") {
+            const { company } = entry;
             return (
-              <Row key={entryKey(entry)} tick={<Tick />}>
-                <Link
-                  href={`/case-studies/${study.slug}`}
-                  /* Stays a real Link so prefetch, middle-click, right-click
-                     and assistive tech all keep working; only the plain left
-                     click is intercepted, to run the scroll before the swap. */
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                    e.preventDefault();
-                    warmDisc(study.disc);
-                    onNavigate(`/case-studies/${study.slug}`);
-                  }}
-                  onPointerEnter={() => warmDisc(study.disc)}
-                  onPointerDown={() => warmDisc(study.disc)}
-                  onFocus={() => warmDisc(study.disc)}
-                  className="group flex gap-4 rounded-lg outline-offset-4 transition-opacity hover:opacity-70"
+              <Row key={entryKey(entry)} tick={<Tick major accent={company.accent} />}>
+                <h2
+                  className="text-lg font-semibold tracking-tight"
+                  style={{ color: company.accent }}
                 >
-                  {study.sleeve && (
-                    /* next/image earns its keep here: the sleeve PNGs are
-                       500-660KB apiece and this renders them at 64px. */
-                    <Image
-                      src={study.sleeve}
-                      alt=""
-                      width={64}
-                      height={64}
-                      className="h-16 w-16 shrink-0 rounded-sm border border-hairline object-cover"
-                    />
-                  )}
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold">
-                      {study.title}
-                      {study.slug === nowPlayingSlug && <NowPlayingBars />}
-                    </span>
-                    <span className="mt-1 line-clamp-2 block text-sm leading-6 text-muted">
-                      {study.subtitle}
-                    </span>
-                  </span>
-                </Link>
+                  {company.name}
+                </h2>
+                <p className="text-lg tracking-tight">{company.role}</p>
+                <p className="mt-0.5 text-xs text-muted">{company.period}</p>
+                <p className="mt-3 max-w-prose text-sm leading-6 text-muted">{company.blurb}</p>
               </Row>
             );
-          })}
-        </div>
+          }
 
-        {/* The cap. Driven by the same --timeline-fill the notches are compared
-            against, so it cannot drift out of sync with them — one measurement,
-            one source of truth. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-0"
-          style={{
-            left: CENTRE - 11,
-            width: 22,
-            height: 10,
-            transform: "translateY(calc(var(--timeline-fill, 0px) - 5px))",
-            borderRadius: 3,
-            background: "linear-gradient(160deg, #ffffff 0%, var(--cap) 42%, #dcdee2 100%)",
-            border: "1px solid var(--cap-edge)",
-            boxShadow: "0 1px 2px rgba(24,26,32,0.28), inset 0 1px 0 rgba(255,255,255,0.9)",
-          }}
-        >
-          {/* grip line down the middle of the cap */}
-          <span
-            className="absolute inset-x-1 top-1/2 block h-px -translate-y-1/2"
-            style={{ background: "rgba(70,74,84,0.45)" }}
-          />
-        </div>
+          const { study } = entry;
+          return (
+            <Row key={entryKey(entry)} tick={<Tick />}>
+              <Link
+                href={`/case-studies/${study.slug}`}
+                /* Stays a real Link so prefetch, middle-click, right-click
+                   and assistive tech all keep working; only the plain left
+                   click is intercepted, to run the scroll before the swap. */
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  e.preventDefault();
+                  warmDisc(study.disc);
+                  onNavigate(`/case-studies/${study.slug}`);
+                }}
+                onPointerEnter={() => warmDisc(study.disc)}
+                onPointerDown={() => warmDisc(study.disc)}
+                onFocus={() => warmDisc(study.disc)}
+                className="group flex gap-4 rounded-lg outline-offset-4 transition-opacity hover:opacity-70"
+              >
+                {study.sleeve && (
+                  /* next/image earns its keep here: the sleeve PNGs are
+                     500-660KB apiece and this renders them at 64px. */
+                  <Image
+                    src={study.sleeve}
+                    alt=""
+                    width={64}
+                    height={64}
+                    className="h-16 w-16 shrink-0 rounded-sm border border-hairline object-cover"
+                  />
+                )}
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">
+                    {study.title}
+                    {study.slug === nowPlayingSlug && <NowPlayingBars />}
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-sm leading-6 text-muted">
+                    {study.subtitle}
+                  </span>
+                </span>
+              </Link>
+            </Row>
+          );
+        })}
       </div>
-
-      <EndGlyph sign="plus" />
     </div>
   );
 }

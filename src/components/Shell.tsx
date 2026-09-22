@@ -199,15 +199,15 @@ export function Shell() {
           sidebar, so the study gets the full column and "‹ All work" is the
           single way back. Same width in both states, so the deck above stays
           over the same measure and nothing shifts on navigation. */}
-      {/* Browsing pulls the rail up so the fader's + sits alongside the intro
-          paragraph instead of starting in clear space below it. Only from md
-          up — at 1440 the rail clears the intro text by ~36px, but on a narrow
+      {/* Browsing pulls the rail up so its head starts alongside the intro
+          paragraph instead of in clear space below it. Only from md up — at
+          1440 the rail clears the intro text by ~36px, but on a narrow
           viewport both span the full column and would collide. A case study
           gets the normal offset: there is no rail to align to. */}
       <div
         data-fade
         className={`mx-auto max-w-2xl transition-opacity duration-[160ms] ${
-          selected ? "mt-14" : "mt-14 md:-mt-20"
+          selected ? "mt-14" : "mt-14 md:-mt-10"
         }`}
       >
         {selected ? (
